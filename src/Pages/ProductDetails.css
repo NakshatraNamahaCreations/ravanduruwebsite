@@ -1,0 +1,11 @@
+/* Safari needs prefixed sticky */
+.position-sticky { position: -webkit-sticky; position: sticky; }
+
+/* Ensure wrappers don't clip sticky */
+.container, .row, .col, .page-content { overflow: visible !important; }
+
+/* Align the sticky column to the top of the flex row */
+.align-self-start { align-self: flex-start !important; }
+
+/* Optional: define your navbar height variable used in 'top' */
+:root { --nav-h: 60px; } /* adjust to your fixed header height */

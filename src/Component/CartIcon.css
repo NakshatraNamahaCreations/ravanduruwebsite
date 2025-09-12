@@ -1,0 +1,198 @@
+.cart-wrapper {
+  position: relative;
+}
+
+.cart-icon {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-count {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: red;
+  color: white;
+  font-size: 12px;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-weight: bold;
+  line-height: 1;
+  z-index: 10;
+}
+
+.cart-bounce {
+  animation: bounce 0.4s ease;
+}
+
+@keyframes bounce {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.25);
+  }
+  60% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.icon-box {
+  position: relative;
+}
+
+.mini-cart-dropdown {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 280px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+}
+
+.mini-cart-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.mini-cart-img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-right: 10px;
+}
+
+.mini-cart-info {
+  flex: 1;
+}
+
+.mini-cart-name {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.mini-cart-price {
+  font-size: 13px;
+  color: #00614A;
+  margin: 2px 0 0;
+}
+
+.mini-cart-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.view-cart-btn,
+.checkout-btn {
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  text-decoration: none;
+  background: #00614A;
+  color: #fff;
+}
+
+
+.cart-toast-stack{
+  position: fixed;
+  top: 72px; /* just under your navbar */
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.cart-toast{
+  width: 320px;
+  background: #fff;
+  border: 1px solid #E3E6EA;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  overflow: hidden;
+  animation: fadeIn .2s ease-out;
+}
+
+.cart-toast-header{
+  display:flex; align-items:center; gap:8px;
+  background:#E6F6EF; /* light green */
+  padding:8px 10px;
+  border-bottom:1px solid #D6EFE3;
+}
+.cart-toast-header .tick{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:18px; height:18px; border-radius:50%;
+  background:#2DB67C; color:#fff; font-weight:700; font-size:12px;
+}
+.cart-toast-header .title{ font-size:12px; font-weight:700; color:#205d46; letter-spacing:.3px; }
+.cart-toast-header .close{
+  margin-left:auto; border:none; background:transparent; font-size:18px; cursor:pointer; line-height:1;
+}
+
+.cart-toast-body{ display:flex; gap:10px; padding:10px; }
+.cart-toast-body .thumb{
+  width:60px; height:72px; object-fit:cover; border-radius:4px; flex:0 0 auto;
+}
+.cart-toast-body .info{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+.cart-toast-body .name{ font-size:13px; font-weight:600; color:#222; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.cart-toast-body .meta{ font-size:12px; color:#555; }
+.cart-toast-body .price{ font-size:14px; font-weight:700; color:#111; }
+
+.slide-in{
+  transform: translateY(-6px) translateX(12px);
+  opacity:0;
+  animation: slideIn .18s ease-out forwards;
+}
+@keyframes slideIn{
+  to{ transform: translateY(0) translateX(0); opacity:1; }
+}
+@keyframes fadeIn{
+  from{opacity:0} to{opacity:1}
+}
+
+
+.cart-bounce {
+  animation: bounce 0.6s;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.2); }
+  70% { transform: scale(0.9); }
+}
+
+.cart-message {
+  position: absolute;
+  top: 45px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  color: red;
+  font-size: 18px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  animation: fadeUp 1.5s ease forwards;
+  width: 200px;
+  text-align: center;
+}
+
+@keyframes fadeUp {
+  0% { opacity: 0; transform: translate(-50%, 10px); }
+  20% { opacity: 1; transform: translate(-50%, 0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -10px); }
+}

@@ -1,0 +1,81 @@
+[
+    {
+      "id": 1,
+      "name": "Groundnut Chutney Podi",
+      "image": "/media/groundnutchatneypudi.png",
+      "originalPrice": 105,
+      "discountedPrice": 100
+    },
+    {
+      "id": 2,
+      "name": "Ravanduru Special Coconut Chutney Podi",
+      "image": "/media/cocnutchatneypudi.png",
+      "originalPrice": 105,
+      "discountedPrice": 100
+    },
+    {
+      "id": 3,
+      "name": "Ravanduru Special Agase Chutney Podi",
+      "image": "/media/agase.png",
+      "originalPrice": 105,
+      "discountedPrice": 100
+    },
+    {
+      "id": 4,
+      "name": "Ravanduru Secret Blend Coffee Powder[70/30 Blend]",
+      "image": "/media/blendcoffeepowder.png",
+      "originalPrice": 105,
+      "discountedPrice": 100
+    },
+    {
+      "id": 5,
+      "name": "Ravanduru Special Power Star Blend Coffee Powder (80/20)",
+      "image": "/media/powerstarblendcoffeepowder.png",
+      "originalPrice": 105,
+      "discountedPrice": 100
+    },
+    {
+      "id": 6,
+      "name": "Chakli",
+      "image": "/media/chakli.png",
+      "originalPrice": 105,
+      "discountedPrice": 100
+    },
+    {
+      "id": 7,
+      "name": "Groundnut Chutney Podi",
+      "image": "/media/groundnutchatneypudi.png",
+      "originalPrice": 105,
+      "discountedPrice": 100
+    },
+    {
+      "id": 8,
+      "name": "Bananna Chips",
+      "image": "/media/bananachips.png",
+      "originalPrice": 105,
+      "discountedPrice": 100
+    },
+    {
+      "id": 9,
+      "name": "Avalakki Mixture",
+      "image": "/media/avalakkimixture.jpg",
+      "originalPrice": 105,
+      "discountedPrice": 100
+    },
+    {
+      "id": 10,
+      "name": "Jaggary Coconut Barfi[Bellad Kobri Mitayi]",
+      "image": "/media/sweets.jpg",
+      "originalPrice": 105,
+      "discountedPrice": 100
+    },
+    {
+      "id": 11,
+      "name": "Dry Fruits Unde",
+      "image": "/media/dryfruitsunde.jpg",
+      "originalPrice": 105,
+      "discountedPrice": 100
+    }
+
+   
+  ]

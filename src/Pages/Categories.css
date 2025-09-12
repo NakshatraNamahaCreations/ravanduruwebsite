@@ -1,0 +1,29 @@
+/* Stack everything top-to-bottom */
+.product-cards {
+  display: flex;
+  flex-direction: column;
+  align-items: center;  /* center; change to 'flex-start' if you prefer left-aligned */
+  text-align: center;   /* center text; remove if left-aligning */
+  gap: 10px;
+  padding: 12px;
+  height: 100%;
+}
+
+/* Image container */
+.product-cards .product-media img {
+  width: 100%;
+  height: 240px;        /* keep your original height */
+  object-fit: contain;
+  display: block;
+}
+
+/* Price row below name */
+.product-cards .product-price {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.product-cards { align-items: flex-start; text-align: left; }
+.product-cards .product-price { justify-content: flex-start; }
