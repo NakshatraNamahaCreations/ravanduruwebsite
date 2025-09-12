@@ -1,0 +1,88 @@
+ import product from '/media/products.png'
+ 
+ export const products = [
+    {
+      id: 1,
+      name: "Uday Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+    {
+      id: 2,
+      name: "Groundnut Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+    {
+      id: 3,
+      name: "Groundnut Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+    {
+      id: 4,
+      name: "Groundnut Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+    {
+      id: 5,
+      name: "Groundnut Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+    {
+      id: 6,
+      name: "Groundnut Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+    {
+      id: 7,
+      name: "Groundnut Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+    {
+      id: 8,
+      name: "Groundnut Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+    {
+      id: 9,
+      name: "Groundnut Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+    {
+      id: 10,
+      name: "Groundnut Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+    {
+      id: 11,
+      name: "Groundnut Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+    {
+      id: 12,
+      name: "Groundnut Chutney Podi",
+      image: product,
+      originalPrice: 120,
+      discountedPrice: 100,
+    },
+  ];
