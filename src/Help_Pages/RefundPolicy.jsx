@@ -82,7 +82,7 @@ export default function RefundPolicy() {
                 <li>
                   If the product you received is damaged or defective, you are
                   eligible for a refund or replacement. Please report the issue
-                  within 7 days of receiving the product.
+                  within 7-10 days of receiving the product.
                 </li>
               </ul>
 
