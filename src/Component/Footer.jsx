@@ -88,7 +88,7 @@ export default function Footer() {
               ABOUT
             </h5>
             <ul className="footer-list" style={listStyle}>
-             {/*} <li>About Us</li>*/}
+              {/*<li>About Us</li>*/}
               <Link to="/account" style={linkStyle}>
                 <li>Account</li>
               </Link>
