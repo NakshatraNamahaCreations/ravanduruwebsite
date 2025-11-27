@@ -1,6 +1,6 @@
 // CartToastProvider.jsx
 import React, { createContext, useContext, useState, useCallback } from "react";
-import './cartIcon.css'
+import './CartIcon.css'
 
 const CartToastCtx = createContext(null);
 export const useCartToast = () => useContext(CartToastCtx);
