@@ -1,0 +1,130 @@
+/* ---------- general ---------- */
+.login-background { background-color: #FBF9F4; font-family: "poppins", sans-serif; position: relative; }
+.wishlist-inner { padding: 30px 0 40px; }
+.wishlist-title { font-weight: bold; color: #00614A; text-align: center; font-size: 35px; margin: 2% 0; }
+
+/* search container responsive */
+.search-container { margin: 0 auto; max-width: 960px; padding: 0 16px; }
+.custom-search { align-items: center; gap: 8px; }
+.search-button-slider {
+  padding: 6px 20px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: #00614A;
+  background-image: url('/media/Searchbutton.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  font-size: 16px;
+  letter-spacing: 1px;
+  margin-left: 8px;
+  cursor: pointer;
+  min-width: 110px;
+}
+
+/* empty wishlist */
+.empty-wishlist .empty-img { width: 250px; margin: 0 auto 12px; display: block; }
+.shop-now-btn { margin-top: 12px; }
+
+/* ---------- product grid ---------- */
+.product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; padding: 10px; margin: 3% 0; justify-items: center; }
+
+/* product card - desktop look */
+.product-card {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  color: #00614A;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+
+/* media and info */
+.product-media { flex: 0 0 40%; display:flex; align-items:center; justify-content:center; padding: 12px; background: #fff; }
+.product-image { width: 100%; height: 250px; object-fit: contain; display: block; }
+
+.product-info { flex: 1 1 60%; padding: 16px 18px; display: flex; flex-direction: column; justify-content: space-between; }
+.product-name { font-size: 22px; font-weight: 700; margin: 0 0 8px 0; text-align: left; }
+.product-rating { display:flex; gap:6px; margin-bottom: 10px; }
+.star-icon { width: 16px; height: 16px; }
+
+/* price and badges */
+.product-price { display:flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.mrp { margin-right: 8px; opacity: 0.7; }
+.price-line { font-size: 22px; font-weight: 700; margin-top: 4px; }
+
+/* actions */
+.product-actions { display:flex; gap: 12px; align-items: center; }
+.view-button {
+  font-weight: 700;
+  color: #00614A;
+  background-color: #97d7c6;
+  border: none;
+  padding: 10px 14px;
+  font-size: 16px;
+  border-radius: 6px;
+}
+.remove-button {
+  color: #FF0000;
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  padding: 6px;
+}
+
+/* ---------- LOCK & SMILE ---------- */
+.lock-smile-section {
+  background-image: url('/media/Nopreservatives.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  padding: 20px 0 40px;
+  color: #fff;
+  font-family: "poppins", sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+.lock-section-inner { display:flex; align-items:center; justify-content:space-between; gap: 12px; padding: 40px; max-width: 1200px; margin: 0 auto; }
+.lock-image, .smile-image { width: 25%; max-width: 280px; height: auto; object-fit: cover; }
+.lock-heading { font-size: 40px; margin: 0; letter-spacing: 1px; color: #fff; text-align: center; }
+.lock-heading-strong { font-weight: 900; font-size: 65px; display:block; }
+
+/* line */
+.line-wrap { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); width: 55%; display:flex; justify-content:center; }
+.line-image { width: 100%; height: auto; object-fit: cover; }
+
+/* ---------- Responsive: mobile (<768px) ---------- */
+@media (max-width: 767px) {
+  .product-grid { grid-template-columns: 1fr; gap: 18px; padding: 8px; margin: 4% 0; }
+
+  /* stack product card content vertically */
+  .product-card { flex-direction: column; align-items: stretch; padding: 8px; }
+  .product-media { flex: 0 0 auto; padding: 8px; }
+  .product-image { height: 200px; width: 100%; }
+
+  .product-info { padding: 12px 10px; }
+  .product-name { font-size: 18px; }
+  .price-line { font-size: 18px; }
+
+  /* actions full width and stacked for touch */
+  .product-actions { flex-direction: column; align-items: stretch; gap: 8px; }
+  .view-button { width: 100%; text-align: center; padding: 12px; }
+  .remove-button { width: 100%; border-radius: 8px; background: transparent; border: 1px solid rgba(255,0,0,0.12); padding: 10px; color: #e74c3c; }
+
+  /* search container becomes full width */
+  .search-container { max-width: 100%; padding: 0 12px; }
+  .search-input { flex: 1 1 auto; min-width: 0; }
+
+  /* lock & smile stacks vertically */
+  .lock-section-inner { flex-direction: column; padding: 18px; text-align: center; }
+  .lock-image, .smile-image { width: 48%; max-width: 220px; margin-bottom: 8px; }
+  .lock-heading { font-size: 22px; }
+  .lock-heading-strong { font-size: 28px; }
+
+  .line-wrap { bottom: 6%; width: 80%; }
+}

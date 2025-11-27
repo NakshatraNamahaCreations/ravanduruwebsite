@@ -35,7 +35,7 @@ export default function ShippingPolicy(){
         {/* SHIPPING POLICY */}
         <Container>
         <div style={{ margin: "0% 10% 10% 10%",
-              fontFamily: "oswald, sans-serif", }}>
+              fontFamily: "oswald, sans-serif", }} className="terms-section">
           <h1
             style={{
               lineHeight: "1.5",
@@ -47,12 +47,12 @@ export default function ShippingPolicy(){
               textAlign: "center",
               marginBottom:'5%',
               color:'#00614A'
-            }}
+            }} className="mobile-font"
           >
             SHIPPING POLICY
           </h1>
           <div className="div-p-ul">
-            <p style={{textAlign:'right', marginBottom:'5%'}}>Last Updated: <span style={{fontFamily:'oswald, sans-serif'}}>October 12, 2024</span></p>
+            <p style={{textAlign:'right', marginBottom:'5%'}} className="date-terms">Last Updated: <span style={{fontFamily:'oswald, sans-serif'}} >October 12, 2024</span></p>
             <p>Thank you for choosing Ravanduru Stores!</p>
             <p>
               Below are the details of our shipping process to ensure a seamless

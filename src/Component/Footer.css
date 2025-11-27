@@ -1,0 +1,118 @@
+/* Footer base */
+.site-footer {
+  background: #00614A;
+  padding: 40px 20px;
+  font-family: "oswaldMedium", "oswald", sans-serif;
+  color: #fff;
+  box-sizing: border-box;
+}
+
+/* Grid container - desktop first */
+.footer-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 15px;
+  padding: 0 5%;
+  align-items: start;
+  text-align: left;
+  align-content: start;
+}
+
+/* Column base */
+.footer-col { padding: 6px 8px; }
+
+/* Logo */
+.footer-logo-img {
+  width: 90%;
+  max-width: 220px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Headings and lists */
+.footer-heading {
+  font-weight: 700;
+  font-size: 20px;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+  color: #fff;
+}
+.footer-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.9;
+}
+.footer-link {
+  color: #fff;
+  text-decoration: none;
+}
+.footer-link:hover {
+  text-decoration: underline;
+}
+
+/* Socials list horizontal on mobile (and stacked on desktop) */
+.footer-socials-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  margin: 0;
+}
+
+/* Contact list smaller spacing */
+.footer-contact-list li { margin-bottom: 6px; }
+
+/* -----------------
+   Responsive: Mobile pairing rows
+   ----------------- */
+@media (max-width: 767px) {
+  .site-footer { padding: 24px 12px; }
+
+  /* two-column pairs on small screens */
+  .footer-container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 0 18px;
+  }
+
+  /* Define explicit ordering so pairs are:
+     Row 1: Logo (col1) | Socials (col2)
+     Row 2: About (col1) | Support (col2)
+     Row 3: Help (col1) | Contact (col2)
+  */
+  .footer-logo-col   { order: 1; }
+  .footer-socials-col{ order: 2; }
+
+  .footer-about-col  { order: 3; }
+  .footer-support-col{ order: 4; }
+
+  .footer-help-col   { order: 5; }
+  .footer-contact-col{ order: 6; }
+
+  /* make social links horizontal for the Row 1 look */
+  .footer-socials-list {
+    flex-direction: row;
+    gap: 12px;
+    justify-content: flex-start; 
+    align-items: center;
+  }
+
+  /* center logo vertically inside its cell */
+  .footer-logo-col { display: flex; align-items: center; }
+
+  /* left-align lists */
+  .footer-col { text-align: left; }
+
+  /* Slightly larger touch targets */
+  .footer-link { font-size: 16px; padding: 6px 0; display: flex; align-items: center; justify-content: flex-start; }
+}
+
+/* Extra small */
+@media (max-width: 420px) {
+  .footer-logo-img { width: 86%; max-width: 180px; }
+  .footer-heading { font-size: 18px; }
+  .footer-list { font-size: 15px; line-height: 1.8; }
+}

@@ -2,6 +2,7 @@ import Container from "react-bootstrap/Container";
 import Nav from "react-bootstrap/Nav";
 import Navbar from "react-bootstrap/Navbar";
 import NavDropdown from "react-bootstrap/NavDropdown";
+import Offcanvas from "react-bootstrap/Offcanvas";
 import logo from "/media/logo.png";
 import faHeart from "/media/Whishlistheart.png";
 import Cart from "/media/Cart.png";
@@ -15,10 +16,9 @@ import "./CartIcon.css";
 import { useNavigate } from "react-router-dom";
 
 const CATEGORIES_URL = "https://ravandurustores-backend.onrender.com/api/categories";
-const PRODUCTS_URL = "https://ravandurustores-backend.onrender.com/api/products"; // list endpoint (NOT /search)
+const PRODUCTS_URL = "https://ravandurustores-backend.onrender.com/api/products";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h cache
 
-// RFC-3986 safe encoder: encodes ! ' ( ) * which encodeURIComponent leaves alone
 const encodeRFC3986 = (s = "") =>
   encodeURIComponent(String(s)).replace(/[!'()*]/g, (c) =>
     `%${c.charCodeAt(0).toString(16).toUpperCase()}`
@@ -26,11 +26,9 @@ const encodeRFC3986 = (s = "") =>
 
 let __PRODUCT_INDEX_MEMO = null;
 
-// Build/load a lightweight product index and cache it
 async function loadProductIndex() {
   if (__PRODUCT_INDEX_MEMO && Array.isArray(__PRODUCT_INDEX_MEMO)) return __PRODUCT_INDEX_MEMO;
 
-  // localStorage cache
   try {
     const raw = localStorage.getItem("productIndexCache");
     if (raw) {
@@ -42,21 +40,18 @@ async function loadProductIndex() {
     }
   } catch {}
 
-  // Fetch from API
   const resp = await fetch(PRODUCTS_URL, { method: "GET" });
   if (!resp.ok) throw new Error("Network error");
   const data = await resp.json();
   const items = Array.isArray(data) ? data : (data?.items || []);
 
   const index = items.map((p) => {
-    // Prefer real product fields; never fall back to category
     const displayName = String(p.productName || p.name || p.title || "").trim();
     const nameNoSpaces = displayName.replace(/\s+/g, "");
-
     return {
       _id: p._id,
       name: displayName,
-      link: `/products/${nameNoSpaces}`, // same format as your Categories page
+      link: `/products/${nameNoSpaces}`,
       imageUrl: p.images?.[0]
         ? `https://ravandurustores-backend.onrender.com${p.images[0]}`
         : "/media/placeholder.png",
@@ -72,12 +67,10 @@ async function loadProductIndex() {
   return index;
 }
 
-// Simple contains match (case-insensitive)
 function matchIncludes(hay, needle) {
   return String(hay || "").toLowerCase().includes(String(needle || "").toLowerCase());
 }
 
-// Product match on name or category
 function productMatches(p, q) {
   const s = q.toLowerCase();
   return (
@@ -106,7 +99,6 @@ export default function Navbar_Menu() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Cart badge (Redux)
   const cartItems = useSelector((state) => state.cart?.cartItems || []);
   const itemCount = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const [animate, setAnimate] = useState(false);
@@ -120,7 +112,6 @@ export default function Navbar_Menu() {
 
   const isCategoryActive = location.pathname.startsWith("/categories");
 
-  // Fetch categories once
   useEffect(() => {
     const run = async () => {
       try {
@@ -143,7 +134,6 @@ export default function Navbar_Menu() {
     run();
   }, []);
 
-  // Warm up product index
   useEffect(() => {
     let mounted = true;
     loadProductIndex()
@@ -167,7 +157,6 @@ export default function Navbar_Menu() {
     navigate(`/search?q=${encodeURIComponent(query.trim())}`);
   };
 
-  // click outside to close suggestion panel
   useEffect(() => {
     const onClickOutside = (e) => {
       if (!searchWrapRef.current) return;
@@ -177,7 +166,6 @@ export default function Navbar_Menu() {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  // Debounced suggestions (client-side)
   useEffect(() => {
     if (!query.trim()) {
       setSuggestions({ products: [], categories: [] });
@@ -187,16 +175,12 @@ export default function Navbar_Menu() {
     setIsSearching(true);
     const t = setTimeout(async () => {
       try {
-        // categories – local filter
         const catMatches = categories.filter((c) => matchIncludes(c.name, query)).slice(0, 6);
-
-        // products – from client-side index
         let prodMatches = [];
         if (productIndexReady) {
           const idx = await loadProductIndex();
           prodMatches = idx.filter((p) => productMatches(p, query)).slice(0, 6);
         }
-
         if (!cancelled) setSuggestions({ products: prodMatches, categories: catMatches });
       } finally {
         if (!cancelled) setIsSearching(false);
@@ -210,13 +194,11 @@ export default function Navbar_Menu() {
     };
   }, [query, categories, productIndexReady]);
 
-  // Track previous count to detect *adds*
   const prevCountRef = useRef(itemCount);
   useEffect(() => {
     const prev = prevCountRef.current;
 
     if (itemCount > prev) {
-      // Item(s) added
       setAnimate(true);
       setShowMessage(true);
       setLiveText("Item added to cart");
@@ -230,13 +212,38 @@ export default function Navbar_Menu() {
       };
     }
 
-    prevCountRef.current = itemCount; // update after checks
+    prevCountRef.current = itemCount;
   }, [itemCount]);
+
+  // -- NEW: offcanvas + mobile detection + expanded state --
+  const [expanded, setExpanded] = useState(false); // used by Navbar on desktop
+  const [showOffcanvas, setShowOffcanvas] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== "undefined" ? window.innerWidth < 992 : false);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 992);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const handleToggle = () => {
+    if (isMobile) {
+      setShowOffcanvas(true);
+    } else {
+      setExpanded((prev) => !prev);
+    }
+  };
+
+  const handleCloseNav = () => {
+    setShowOffcanvas(false);
+    setExpanded(false);
+  };
 
   return (
     <div style={{ fontFamily: "oswald, sans-serif" }}>
       <Navbar
         expand="lg"
+        expanded={expanded}
         className="navbar-sticky"
         style={{
           backgroundColor: "#00614A",
@@ -256,8 +263,10 @@ export default function Navbar_Menu() {
             />
           </Navbar.Brand>
 
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
+          {/* Toggle: opens Offcanvas on mobile, collapse on desktop */}
+          <Navbar.Toggle aria-controls="basic-navbar-nav" onClick={handleToggle} />
 
+          {/* Desktop collapse */}
           <Navbar.Collapse id="basic-navbar-nav" className="justify-content-between navbar-collapse">
             {/* Menu Links */}
             <Nav
@@ -266,6 +275,7 @@ export default function Navbar_Menu() {
             >
               <NavLink
                 to="/"
+                onClick={handleCloseNav}
                 className={({ isActive }) =>
                   isActive ? "nav-hover-effect active-link" : "nav-hover-effect"
                 }
@@ -276,6 +286,7 @@ export default function Navbar_Menu() {
 
               <NavLink
                 to="/best-seller"
+                onClick={handleCloseNav}
                 className={({ isActive }) =>
                   isActive ? "nav-hover-effect active-link" : "nav-hover-effect"
                 }
@@ -324,6 +335,7 @@ export default function Navbar_Menu() {
                         key={category._id}
                         as={Link}
                         to={`/categories?category=${encodeRFC3986(category.name)}`}
+                        onClick={handleCloseNav}
                         className="nav-hover-effect-categories"
                         style={{ color: "black", fontSize: "18px", letterSpacing: "1px", fontWeight: "700" }}
                       >
@@ -339,14 +351,14 @@ export default function Navbar_Menu() {
             <div className="d-flex gap-3 text-white navbar-icons">
               {/* Wishlist */}
               <div className="icon-box">
-                <Link to="/wishlist">
+                <Link to="/wishlist" onClick={handleCloseNav}>
                   <img src={faHeart} alt="Wishlist" className="icon-img" />
                 </Link>
               </div>
 
               {/* Cart */}
-              <div className="icon-box cart-icon-box"> {/* ensure position:relative in CSS */}
-                <Link to="/your-cart" className="cart-wrapper">
+              <div className="icon-box cart-icon-box" style={{ position: "relative" }}>
+                <Link to="/your-cart" className="cart-wrapper" onClick={handleCloseNav}>
                   <div className={`cart-icon ${animate ? "cart-bounce" : ""} icon-box`}>
                     <img src={Cart} alt="Cart" className="icon-img" />
                     {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
@@ -364,12 +376,97 @@ export default function Navbar_Menu() {
 
               {/* Account */}
               <div className="icon-box">
-                <Link to="/login">
+                <Link to="/login" onClick={handleCloseNav}>
                   <img src={Account} alt="Account" className="icon-img" />
                 </Link>
               </div>
             </div>
           </Navbar.Collapse>
+
+          {/* Offcanvas for mobile (right side slide) */}
+          <Offcanvas
+            show={showOffcanvas}
+            onHide={() => setShowOffcanvas(false)}
+            placement="end"
+            aria-labelledby="offcanvasNavbarLabel"
+            style={{ width: "380px" }}
+          >
+            <Offcanvas.Header closeButton>
+              <Offcanvas.Title id="offcanvasNavbarLabel">
+                <img
+                  src={logo}
+                  alt="Ravanduru-Logo"
+                  style={{ width: "140px", height: "auto", objectFit: "cover" }}
+                />
+              </Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body>
+              <Nav className="flex-column" style={{ gap: "10px", fontSize: "18px" }}>
+                <NavLink
+                  to="/"
+                  onClick={handleCloseNav}
+                  className={({ isActive }) =>
+                    isActive ? "nav-hover-effect active-link" : "nav-hover-effect"
+                  }
+                  style={{ color: "#000", letterSpacing: "1px", padding: "8px 0", fontWeight:"BOLD" }}
+                >
+                  HOME
+                </NavLink>
+
+                <NavLink
+                  to="/best-seller"
+                  onClick={handleCloseNav}
+                  className={({ isActive }) =>
+                    isActive ? "nav-hover-effect active-link" : "nav-hover-effect"
+                  }
+                  style={{ color: "#000", letterSpacing: "1px", padding: "8px 0", fontWeight:"bold" }}
+                >
+                  BEST SELLER
+                </NavLink>
+
+                <div style={{ marginTop: "8px", marginBottom: "8px" }}>
+                  <div style={{ fontWeight: 700, letterSpacing: "1px", marginBottom: "6px" }}>CATEGORIES</div>
+                  <div style={{ backgroundColor: "#97D7C6", padding: "8px", borderRadius: "6px" }}>
+                    {loading ? (
+                      <div>Loading...</div>
+                    ) : error ? (
+                      <div>{error}</div>
+                    ) : categories.length === 0 ? (
+                      <div>No categories available</div>
+                    ) : (
+                      categories.map((category) => (
+                        <Link
+                          key={category._id}
+                          to={`/categories?category=${encodeRFC3986(category.name)}`}
+                          onClick={handleCloseNav}
+                          className="nav-hover-effect-categories"
+                          style={{ display: "block", color: "black", fontSize: "16px", fontWeight: 700, padding: "6px 0",textDecoration:"none", fontFamily:"poppins" }}
+                        >
+                          {category.name}
+                        </Link>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Icons stacked in Offcanvas */}
+                <div style={{ display: "flex", gap: "14px", marginTop: "18px", alignItems: "center" }}>
+                  <Link to="/wishlist" onClick={handleCloseNav}>
+                    <img src={faHeart} alt="Wishlist" className="icon-img" />
+                  </Link>
+
+                  <Link to="/your-cart" onClick={handleCloseNav} style={{ position: "relative" }}>
+                    <img src={Cart} alt="Cart" className="icon-img" />
+                    {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
+                  </Link>
+
+                  <Link to="/login" onClick={handleCloseNav}>
+                    <img src={Account} alt="Account" className="icon-img" />
+                  </Link>
+                </div>
+              </Nav>
+            </Offcanvas.Body>
+          </Offcanvas>
         </Container>
       </Navbar>
     </div>

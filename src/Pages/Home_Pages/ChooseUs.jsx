@@ -8,8 +8,7 @@ import curveline from "/media/Curveline.png";
 import whychooseus from "/media/whychooseus.png";
 import Chakaliimagereverse from "/media/Chakaliimage-reverse.png";
 import Chakaliimage from "/media/Chakaliimage.png";
-import { height, width } from "@fortawesome/free-regular-svg-icons/faAddressBook";
-import village from "/media/village.png"
+import village from "/media/village.png";
 
 const sections = [
   {
@@ -45,141 +44,53 @@ const sections = [
 ];
 
 export default function ChooseUs() {
-  const sideImageStyle = {
-    width: "60%",
-    height: "auto",
-    objectFit: "contain",
-    position:"relative",
-    right: "30%"
-
-
-  };
- const rightImageStyle ={
-  width: "20%",
-  height: "auto",
-  objectFit:"contain",
-  position:"relative",
-  right:"20%"
- }
-
   return (
-    <div style={{ position: "relative", fontFamily: "oswald, sans-serif" , color:'#00614A'}}>
-      {/* Decorative Images */}
-      <div
-        style={{ position: "absolute", top: "25%" }}
-        className="decorative-image"
-      >
-        <img src={whychooseus} alt="Laddu" style={sideImageStyle} />
+    <div className="chooseus-root" style={{ fontFamily: "oswald, sans-serif", color: "#00614A", position: "relative" }}>
+      {/* Decorative side image (desktop) */}
+      <div className="decorative-side">
+        <img src={whychooseus} alt="why choose us" className="decorative-side-img" />
       </div>
-      <div
-        style={{ position: "absolute", top: "2%", right: "-42%" }}
-        className="decorative-image"
-      >
-        <img
-          src={Chakaliimagereverse}
-          alt="Chakali Reverse"
-          style={rightImageStyle}
-        />
+
+      {/* Right decorative chakali (desktop) */}
+      <div className="decorative-right">
+        <img src={Chakaliimagereverse} alt="Chakali Reverse" className="decorative-right-img" />
       </div>
-      
 
-      {/* Content Section */}
-      <Container
-        className="chooseus-container"
-        style={{ padding: "80px 20px 0px 20px" }}
-      >
-        <h2
-          className="chooseus-title"
-          style={{
-            textAlign: "center",
-            fontSize: "35px",
-            letterSpacing: "1px",
-            marginBottom: "60px",
-          }}
-        >
-          Why Choose Us?
-        </h2>
+      {/* Background village (light decorative) */}
+      <div className="decorative-village">
+        <img src={village} alt="village" className="decorative-village-img" />
+      </div>
 
-        <div style={{ position: "relative" }}>
-          {sections.map((section, index) => (
-            <div
-              key={index}
-              className="chooseus-row"
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                alignItems: "center",
-                gap: "40px",
-                width: "70%",
-                margin: "0 auto 50px",
-                direction: index % 2 === 1 ? "rtl" : "ltr",
-              }}
-            >
+      <Container className="chooseus-container">
+        <h2 className="chooseus-title">Why Choose Us?</h2>
+
+        <div className="chooseus-list">
+          {sections.map((section, index) => {
+            const isOdd = index % 2 === 1;
+            return (
               <div
-                className="chooseus-image"
-                style={{ direction: "ltr", textAlign: "center" }}
+                key={index}
+                className={`chooseus-row ${isOdd ? "row-odd" : "row-even"}`}
               >
-                <img
-                  src={section.img}
-                  alt={section.alt}
-                  style={{
-                    width: "220px",
-                    height: "auto",
-                    objectFit: "contain",
-                    maxWidth: "100%",
-                  }}
-                />
-              </div>
-              <div style={{ direction: "ltr" }}>
-                <p
-                  className="chooseus-text"
-                  style={{
-                    fontSize: "18px",
-                    fontFamily: "oswald, sans-serif",
-                    letterSpacing: "1px",
-                    lineHeight: "1.7",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "22px",
-                      fontFamily: "oswald, sans-serif",
-                    }}
-                  >
-                    {section.title}
-                  </span>{" "}
-                  {section.text}
-                </p>
-              </div>
-            </div>
-          ))}
+                <div className="chooseus-image">
+                  <img src={section.img} alt={section.alt} className="section-img" />
+                </div>
 
-          {/* Optional: hide curve image on mobile */}
-          <div
-            className="curve-line"
-            style={{
-              position: "absolute",
-              top: "12%",
-              left: "80%",
-              transform: "translateX(-50%)",
-              width: "100%",
-              zIndex: "-1",
-            }}
-          >
-            <img
-              src={curveline}
-              alt="Curve Line"
-              style={{ width: "40%", height: "auto", objectFit: "contain" }}
-            />
-          </div>
+                <div className="chooseus-copy">
+                  <p className="chooseus-text">
+                    <span className="chooseus-title-small">{section.title}</span>{" "}
+                    {section.text}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
-         <div style={{  position:"absolute", top:"25%" }}>
-                    <img
-                      src={village}
-                      alt="village"
-                      style={{ width: "100%", height: "500px", objectFit: "cover" }}
-                    />
-                  </div>
+
+        {/* curve decorative (positioned behind) */}
+        <div className="curve-line">
+          <img src={curveline} alt="Curve Line" className="curve-img" />
+        </div>
       </Container>
     </div>
   );

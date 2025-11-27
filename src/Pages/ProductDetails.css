@@ -9,3 +9,26 @@
 
 /* Optional: define your navbar height variable used in 'top' */
 :root { --nav-h: 60px; } /* adjust to your fixed header height */
+
+@media (max-width: 768px) {
+    .left-product{
+        position: relative !important;
+        margin-top: -30px;
+    }
+    .right-product-desc{
+        margin-top: 100px;
+    }
+    .cart-btn{
+        padding: 10px;
+        width:  170px !important;
+          height: 50px;
+    }
+
+    .buy-btn{
+        padding: 10px;
+        width:  170px !important;
+          height: 50px;
+    }
+    
+}
+

@@ -36,7 +36,7 @@ export default function Privacy_Policy() {
         {/* PRIVACY POLICY */}
         <Container>
           <div style={{margin: "0% 10% 10% 10%",
-              fontFamily: "oswald, sans-serif", }}>
+              fontFamily: "oswald, sans-serif", }} className="terms-section">
             <h1
               style={{
                 lineHeight: "1.5",
@@ -48,13 +48,13 @@ export default function Privacy_Policy() {
                 textAlign: "center",
                 marginBottom: "5%",
                 color:'#00614A'
-              }}
+              }}className="mobile-font"
             >
               PRIVACY POLICY
             </h1>
 
             <div className="div-p-ul">
-              <p style={{ textAlign: "right" }}>
+              <p style={{ textAlign: "right" }} className="date-terms">
                 Effective Date:{" "}
                 <span
                   style={{

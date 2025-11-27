@@ -172,7 +172,7 @@ export default function Contact() {
               CONTACT US
             </h1>
           </div>
-          (
+          
           <Container
             className="mt-5"
             style={{ fontFamily: "oswald, sans-serif" }}
@@ -274,7 +274,7 @@ export default function Contact() {
             <Row className="justify-content-md-center">
               <Col md={6}>
                 <div
-                  className="p-4"
+                  className="p-4 contact-form"
                   style={{
                     backgroundColor: "#00614A",
                     borderRadius: "10px",

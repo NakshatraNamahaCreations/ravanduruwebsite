@@ -41,7 +41,7 @@ export default function RefundPolicy() {
             style={{
               margin: "0% 10% 10% 10%",
               fontFamily: "oswald, sans-serif",
-            }}
+            }} className="terms-section"
           >
             <h1
               style={{
@@ -54,7 +54,7 @@ export default function RefundPolicy() {
                 textAlign: "center",
                 marginBottom: "5%",
                 color: "#00614A",
-              }}
+              }} className="mobile-font"
             >
               REFUND POLICY
             </h1>

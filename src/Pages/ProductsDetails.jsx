@@ -1177,6 +1177,13 @@ const percentOff =
 // price displayed = original price * quantity (NOT reduced)
 const displayAmount = orig > 0 ? orig * (quantity || 1) : (toNumber(price) * (quantity || 1));
 
+const toPoints = (text = "") =>
+  text
+    .split(/[,.\n]/)       // split by comma, full stop, newline
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+
+    const isMobile = window.innerWidth < 768;
 
   
 
@@ -1187,7 +1194,7 @@ const displayAmount = orig > 0 ? orig * (quantity || 1) : (toNumber(price) * (qu
   {/* LEFT — STICKY COLUMN */}
   <Col
     md={6}
-    className="position-sticky align-self-start"
+    className="position-sticky align-self-start left-product"
     style={{ top: 'calc(var(--nav-h, 80px) + 12px)', zIndex: 2 }}
   >
     {/* main image */}
@@ -1198,7 +1205,7 @@ const displayAmount = orig > 0 ? orig * (quantity || 1) : (toNumber(price) * (qu
     />
 
     {/* thumbnails */}
-    <div className="d-flex flex-wrap justify-content-center gap-3 mt-3">
+    <div className="d-flex flex-wrap justify-content-center gap-3 mt-3 ">
       {thumbnails.map((t, index) => {
         const active = mainImage === t.src;
         return (
@@ -1240,7 +1247,7 @@ const displayAmount = orig > 0 ? orig * (quantity || 1) : (toNumber(price) * (qu
   </Col>
 
   {/* RIGHT COLUMN */}
-  <Col md={6} className="d-flex flex-column align-items-start">
+  <Col md={6} className="d-flex flex-column align-items-start right-product-desc">
     {/* Title */}
     <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
       <h3
@@ -1362,7 +1369,7 @@ const displayAmount = orig > 0 ? orig * (quantity || 1) : (toNumber(price) * (qu
     )}
 
     {/* Quantity stepper */}
-    <div className="d-flex flex-wrap align-items-center gap-3 mt-4">
+    <div className="d-flex flex-wrap align-items-center gap-3 mt-4 ">
       <div className="d-flex align-items-center border rounded-pill">
         <Button variant="link" className="qty-btn" onClick={() => setQuantity(q => Math.max(1, q - 1))}>
           −
@@ -1379,10 +1386,10 @@ const displayAmount = orig > 0 ? orig * (quantity || 1) : (toNumber(price) * (qu
     </div>
 
     {/* CTAs */}
-    <div className="d-flex gap-3 mt-4">
+    <div className="d-flex gap-3 mt-4 ">
       <Button
         variant="none"
-        className="px-4 py-2"
+        className="px-4 py-2 cart-btn"
         onClick={handleAddToCart}
         style={{
           backgroundColor: "#97d7c6",
@@ -1398,7 +1405,7 @@ const displayAmount = orig > 0 ? orig * (quantity || 1) : (toNumber(price) * (qu
       </Button>
       <Button
         variant="none"
-        className="px-4 py-2"
+        className="px-4 py-2 buy-btn"
         onClick={handleAddToCart}
         style={{
           backgroundColor: "#97d7c6",
@@ -1417,27 +1424,67 @@ const displayAmount = orig > 0 ? orig * (quantity || 1) : (toNumber(price) * (qu
 
 
 {/* --- Details table --- */}
-<Table bordered responsive className="mt-4 mb-5">
-  <tbody>
-    <tr>
-      <td style={{ fontFamily: "poppins", padding: "15px" }}>
-        <strong>Product Description</strong>
-      </td>
-      <td style={{ fontFamily: "poppins", padding: "15px" }}>
-        {product?.description || "No description available."}
-      </td>
-    </tr>
+{!isMobile ? (
+  /* ➤ DESKTOP VIEW — SHOW TABLE */
+  <Table bordered responsive className="mt-4 mb-5">
+    <tbody>
+      <tr>
+        <td style={{ fontFamily: "poppins", padding: "15px", width: "30%" }}>
+          <strong>Product Description</strong>
+        </td>
+        <td style={{ fontFamily: "poppins", padding: "15px" }}>
+          {product?.description || "No description available."}
+        </td>
+      </tr>
 
-    <tr>
-      <td style={{ fontFamily: "poppins", padding: "14px" }}>
-        <strong>Product Ingredients</strong>
-      </td>
-      <td style={{ fontFamily: "poppins", padding: "14px" }}>
-        {product?.ingredientsDescription || "No description available."}
-      </td>
-    </tr>
-  </tbody>
-</Table>
+      <tr>
+        <td style={{ fontFamily: "poppins", padding: "14px", width: "30%" }}>
+          <strong>Product Ingredients</strong>
+        </td>
+        <td style={{ fontFamily: "poppins", padding: "14px" }}>
+          {product?.ingredientsDescription || "No description available."}
+        </td>
+      </tr>
+    </tbody>
+  </Table>
+) : (
+  /* ➤ MOBILE VIEW — SHOW BULLET POINTS */
+  <div className="mt-4 mb-5" style={{ fontFamily: "poppins" }}>
+    
+    {/* Product Description */}
+    <h4 style={{ fontWeight: "600", color: "#00614A", fontSize: 18 }}>
+      Product Description
+    </h4>
+    <ul style={{ paddingLeft: "20px", marginBottom: "20px" }}>
+      {toPoints(product?.description).length ? (
+        toPoints(product?.description).map((point, index) => (
+          <li key={index} style={{ marginBottom: "6px", fontSize: 15 }}>
+            {point}
+          </li>
+        ))
+      ) : (
+        <li>No description available.</li>
+      )}
+    </ul>
+
+    {/* Product Ingredients */}
+    <h4 style={{ fontWeight: "600", color: "#00614A", fontSize: 18 }}>
+      Product Ingredients
+    </h4>
+    <ul style={{ paddingLeft: "20px" }}>
+      {toPoints(product?.ingredientsDescription).length ? (
+        toPoints(product?.ingredientsDescription).map((point, index) => (
+          <li key={index} style={{ marginBottom: "6px", fontSize: 15 }}>
+            {point}
+          </li>
+        ))
+      ) : (
+        <li>No description available.</li>
+      )}
+    </ul>
+  </div>
+)}
+
  </Col>
 </Row>
 <div className="mt-5">

@@ -34,6 +34,10 @@ body {
 
 }
 
+html, body {
+  scroll-behavior: auto !important;
+}
+
 /* .navbar-sticky {
   position: static;
 } */
@@ -945,6 +949,7 @@ body {
     background-size: contain;
     background-position: center;
     padding: 40px 10px;
+    height: 200px;
   }
 
   .hero-heading {
@@ -1304,6 +1309,7 @@ body {
   .hero-section {
     padding: 40px 15px;
     text-align: center;
+    height: 200px;
   }
 
   .ads-img {
@@ -1330,11 +1336,21 @@ body {
   }
 
   .story-image{
-    margin-top: 45% !important;
+    margin-top: -40% !important;
   }
 
   .mobile-font{
     font-size: 46px !important;
+  }
+
+  .social-sidebar{
+    position: absolute;
+    top: 40%;
+  }
+
+  .social-icon{
+    width: 20px;
+    height: 20px;
   }
 }
 
@@ -1411,6 +1427,608 @@ input.form-control.input-addressdetails:-moz-placeholder { color: #222 !importan
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 12px;
+}
+
+
+/* Base section */
+.no-preservatives-section{
+  /* background image (keeps your image) */
+  background-image: url('/media/Nopreservatives.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  color: #ffffff;
+  font-family: "oswald", sans-serif;
+  padding: 48px 24px; /* generous padding on desktop */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Optional overlay to improve text contrast — enable if needed */
+/* .no-preservatives-section::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.28);
+  z-index: 0;
+} */
+
+.no-preservatives-inner{
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1; /* above overlay */
+}
+
+/* left: media */
+.no-preservatives-media{
+  flex: 1 1 40%;
+  min-width: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.no-preservatives-image{
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+}
+
+/* right: content */
+.no-preservatives-content{
+  flex: 1 1 55%;
+  padding: 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* text group */
+.no-preservatives-text{
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+
+.no-preservatives-image {
+    width: 600px;
+    height: 500px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+    position: relative;
+    right: 30%;
+    bottom: -50px;
+}
+/* responsive headings using clamp */
+.np-heading,
+.np-subheading{
+  margin: 0;
+  line-height: 1.02;
+  letter-spacing: 1px;
+  font-weight: 700;
+  color: #ffffff;
+  /* Desktop size up to very-large, will scale down on mobile */
+}
+
+.np-heading{
+  font-size: clamp(1.8rem, 4.8vw, 3.2rem); /* ~28px - 51px */
+}
+
+.np-subheading{
+  font-size: clamp(1.6rem, 4.2vw, 3.2rem); /* ~26px - 51px */
+}
+
+/* decorative stamp */
+.natural-stamp {
+    position: absolute;
+    bottom: 85%;
+    right: -65%;
+    transform: translateY(50%);
+    pointer-events: none;
+}
+
+/* stamp image sizing */
+.natural-stamp-img{
+  width: 35%;
+  height: auto;
+  display: block;
+}
+
+/* =================
+   Mobile responsiveness
+   ================= */
+@media (max-width: 992px){
+  .no-preservatives-inner{
+    gap: 16px;
+  }
+
+  .natural-stamp{
+    /* bring stamp closer and smaller on tablet */
+    right: -18%;
+    bottom: 40%;
+  }
+
+  .natural-stamp-img{
+    width: 28%;
+  }
+}
+
+/* Stack layout on small screens */
+@media (max-width: 767px){
+  .no-preservatives-inner{
+    flex-direction: column-reverse; /* text first or image first — I used image after text for better flow */
+    align-items: center;
+    padding: 0;
+  }
+
+  .no-preservatives-media{
+    width: 100%;
+    flex: 0 0 auto;
+    margin-top: 18px;
+  }
+
+  .no-preservatives-content{
+    width: 100%;
+    padding: 12px 6px 24px;
+    text-align: left;
+  }
+
+  .np-heading,
+  .np-subheading{
+    text-align: left;
+  }
+
+  .np-heading{
+    font-size: clamp(1.6rem, 6.6vw, 2.4rem); /* ~25px down to ~16px */
+  }
+  .np-subheading{
+    font-size: clamp(1.2rem, 6.2vw, 1.8rem);
+  }
+
+  /* Place the stamp inside the content on mobile */
+  .natural-stamp{
+    position: relative;
+    bottom: -50px;
+    right: 0%;
+    transform: none;
+    margin-top: 14px;
+    pointer-events: none;
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .natural-stamp-img{
+    width: 120px; /* fixed width for better layout */
+    max-width: 28%;
+  }
+
+    .no-preservatives-image {
+        width: 500px;
+        height: 400px;
+        object-fit: cover;
+        border-radius: 6px;
+        display: block;
+        position: relative;
+        left: -3%;
+    }
+
+    .no-preservatives-section{
+      height: "fit-content"
+    }
+}
+
+/* very small screens */
+@media (max-width: 420px){
+  .no-preservatives-section{
+    padding: 22px 12px;
+  }
+
+  .np-heading{
+    font-size: 1.6rem;
+  }
+  .np-subheading{
+    font-size: 1.1rem;
+  }
+
+  .natural-stamp-img{
+    width: 100px;
+  }
+}
+
+
+/* Root and container */
+.chooseus-root {
+  overflow: visible;
+  padding: 40px 12px 80px;
+  position: relative;
+}
+
+.chooseus-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 18px;
+}
+
+/* Title */
+.chooseus-title {
+  text-align: center;
+  font-size: clamp(1.6rem, 3.6vw, 2.2rem); /* scales between ~25px and 35px */
+  letter-spacing: 1px;
+  margin-bottom: 40px;
+  color: #00614A;
+  font-weight: 700;
+}
+
+/* The list wrapper */
+.chooseus-list {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* Row - desktop two column grid */
+.chooseus-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 40px;
+  width: 70%;
+  margin: 0 auto;
+  direction: ltr;
+}
+
+/* Reverse layout for odd rows */
+.chooseus-row.row-odd {
+  direction: rtl; /* flips placements while keeping text LTR inside */
+}
+
+/* Keep inner content LTR */
+.chooseus-row .chooseus-image,
+.chooseus-row .chooseus-copy {
+  direction: ltr;
+}
+
+/* Image */
+.section-img {
+  width: 220px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Text */
+/*.chooseus-copy { }*/
+
+.chooseus-text {
+  font-size: clamp(0.95rem, 1.8vw, 1.1rem); /* ~15px-18px */
+  line-height: 1.7;
+  letter-spacing: 0.4px;
+  margin: 0;
+  color: #00614A;
+  font-family: "oswald", sans-serif;
+}
+
+.chooseus-title-small {
+  display: inline-block;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+/* Curve line (behind content) */
+.curve-line {
+  position: absolute;
+  top: 8%;
+  left: 80%;
+  transform: translateX(-50%);
+  width: 40%;
+  z-index: -1;
+}
+.curve-img { width: 100%; height: auto; display: block; }
+
+/* Decorative positional images (desktop) */
+.decorative-side {
+  position: absolute;
+  top: 18%;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.decorative-side-img {
+  width: 60%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.decorative-right {
+  position: absolute;
+  top: 2%;
+  right: -18%;
+  z-index: 0;
+  pointer-events: none;
+}
+.decorative-right-img {
+  width: 22%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Village background (very subtle, behind everything) */
+.decorative-village {
+  position: absolute;
+  top: 22%;
+  left: 10%;
+  z-index: -2;
+  pointer-events: none;
+  opacity: 0.12;
+}
+.decorative-village-img {
+  width: 800px;
+  max-width: 90%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+/* =========================
+   Mobile / tablet responsive
+   ========================= */
+
+@media (max-width: 992px) {
+  .chooseus-row { width: 86%; gap: 20px; }
+  .decorative-side-img { width: 46%; }
+  .decorative-right-img { width: 18%; right: -10%; }
+  .decorative-village-img { width: 520px; opacity: 0.1; }
+  .curve-line { left: 82%; width: 48%; top: 6%; }
+}
+
+@media (max-width: 767px) {
+  .chooseus-root { padding: 24px 12px 48px; }
+
+  /* Stack rows: image above text for mobile for clearer reading */
+  .chooseus-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    margin: 0 auto;
+    gap: 16px;
+  }
+
+  /* Ensure text is LTR regardless of row-odd */
+  .chooseus-row.row-odd { direction: ltr; }
+
+  .section-img {
+    width: 160px;
+    margin: 0 0 6px 0;
+  }
+
+  .chooseus-text { font-size: 0.95rem; }
+
+  /* hide or shrink heavy decorative elements on small screens */
+  .decorative-side { display: none; }
+  .decorative-right { display: none; }
+  .decorative-village { display: none; }
+  .curve-line { display: none; }
+}
+
+/* very small screens */
+@media (max-width: 420px) {
+  .section-img { width: 140px; }
+  .chooseus-title { font-size: 1.4rem; margin-bottom: 28px; }
+  .chooseus-text { font-size: 0.9rem; }
+}
+
+
+/* Base background (keeps your background image) */
+.lock-smile-background {
+  background-image: url('/media/Nopreservatives.png');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  padding: 20px 0 0 0;
+  color: #ffffff;
+  font-family: "oswald", sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+/* inner wrapper to limit width */
+.lock-smile-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 20px 80px;
+  position: relative;
+}
+
+/* main section - desktop row */
+.lock-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 70px 10px;
+  position: relative;
+}
+
+/* images */
+.lock-image,
+.smile-image {
+  width: 25%;
+  max-width: 280px;
+  height: auto;
+  object-fit: cover;
+  z-index: 2;
+  display: block;
+}
+
+/* heading container */
+.lock-copy {
+  flex: 1 1 50%;
+  text-align: center;
+  z-index: 2;
+}
+
+/* heading sizes responsive with clamp */
+.lock-heading {
+  margin: 0;
+  font-size: clamp(1.4rem, 3.2vw, 2.5rem); /* ~22px to 40px */
+  letter-spacing: 1px;
+  line-height: 1.02;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* emphasized part */
+.lock-heading-strong {
+  display: block;
+  font-weight: 900;
+  font-size: clamp(2rem, 5.5vw, 4rem); /* ~32px to 65px */
+  line-height: 1;
+  letter-spacing: 1px;
+}
+
+/* decorative line near bottom */
+.lock-line-wrap {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 55%;
+  display: flex;
+  justify-content: center;
+  z-index: 1;
+}
+
+.line-image {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  display: block;
+  opacity: 0.95;
+}
+
+/* ===== Mobile / tablet adjustments ===== */
+@media (max-width: 992px) {
+  .lock-image,
+  .smile-image {
+    max-width: 220px;
+  }
+  .lock-section { padding: 50px 8px; }
+  .lock-line-wrap { bottom: 8%; width: 70%; }
+}
+
+@media (max-width: 767px) {
+  .lock-smile-inner {
+    padding: 18px 14px 60px;
+  }
+
+  /* stack vertically with image - text - image */
+  .lock-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    padding: 28px 6px;
+    text-align: center;
+  }
+
+  .lock-image,
+  .smile-image {
+    width: 48%;
+    max-width: 220px;
+  }
+
+  .lock-copy { width: 100%; padding: 0 6px; }
+
+  .lock-heading {
+    font-size: clamp(1.25rem, 5.6vw, 1.6rem); /* tighter mobile size */
+  }
+
+  .lock-heading-strong {
+    font-size: clamp(1.6rem, 9vw, 2.4rem);
+  }
+
+  /* move line a bit higher so it remains visible on small screens */
+  .lock-line-wrap {
+    bottom: 6%;
+    width: 80%;
+  }
+
+  .reviews-wrapper{
+    height: 300px;
+  }
+
+  .review-card{
+    height: 200px;
+  }
+
+  .review-card-inner h5{
+    margin-bottom: 10px;
+    font-size: 17px;
+  }
+
+  .review-card-inner h2{
+    font-size: 22px !important; 
+  }
+}
+
+/* very small screens */
+@media (max-width: 420px) {
+  .lock-image,
+  .smile-image {
+    width: 60%;
+    max-width: 180px;
+  }
+
+  .lock-heading-strong {
+    font-size: 1.5rem;
+  }
+}
+
+/* Apply animation only on mobile */
+@media (max-width: 768px) {
+  .ads-img {
+    animation: moveSide 6s ease-in-out infinite alternate;
+    transform: translateX(0);
+  }
+
+  .terms-section{
+    padding: 5px;
+    margin: 0 !important;
+  }
+  .mobile-font{
+    font-size: 35px !important;
+  }
+
+  .contact-col{
+    margin-bottom: 10px;
+  }
+
+  .contact-form{
+    z-index: 3;
+    position: relative;
+  }
+
+  .date-terms{
+    text-align: left !important;
+  }
 }
 
 

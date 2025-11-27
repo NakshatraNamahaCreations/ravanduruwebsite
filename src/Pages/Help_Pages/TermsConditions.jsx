@@ -41,7 +41,7 @@ export default function TermsConditions() {
               padding: "30px",
               margin: "0% 10% 10% 10%",
               fontFamily: "oswald, sans-serif",
-            }}
+            }} className="terms-section"
           >
             <h1
               style={{

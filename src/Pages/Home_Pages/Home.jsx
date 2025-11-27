@@ -27,6 +27,7 @@ import imgicon from "/media/imgicon.png";
 import { useRef } from "react";
 import frameajji from "/media/frameajji.png"
 import Ravanduru from "/media/Ravanduru.png"
+import featureimg from "/media/featureimg.jpeg"
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false);
@@ -111,9 +112,9 @@ export default function Home() {
             {/* Ads */}
             <div className="hero-ads" style={{ position: "relative", display: "inline-block", marginTop:"-70px"}}>
              
-  <img src={Orange} alt="ads" className="ads-img" style={{ width: "100%", height: "auto" }} />
+  <img src={featureimg} alt="ads" className="ads-img" style={{ width: "100%", height: "auto" }} />
    
-<div style={{ position: "relative", marginTop: "-15px" }}>
+{/*<div style={{ position: "relative", marginTop: "-15px" }}>
  
   <div
     className="iconbg"
@@ -139,7 +140,7 @@ export default function Home() {
 
   
   
-</div>
+</div>*/}
 
 </div>
 
@@ -238,7 +239,7 @@ export default function Home() {
                   className="story-image"
                   src={Ravanduru}
                   alt="Products"
-                  style={{ width: "100%", height: "600px", objectFit: "cover" }}
+                  style={{ width: "100%", height: "800px", objectFit: "cover", marginTop:"-70px"}}
                 />
                {/*} <Button
                   variant="none"
@@ -297,176 +298,65 @@ export default function Home() {
 
           {/* 100% NATURAL */}
 
-          <div
-            className="no-preservatives-section"
-            style={{
-              backgroundImage: "url('/media/Nopreservatives.png')",
-              backgroundSize: "cover",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center",
+        <div className="no-preservatives-section">
+  <div className="no-preservatives-inner">
+    <div className="no-preservatives-media">
+      <img
+        src={momkids}
+        alt="Mom and kids"
+        className="no-preservatives-image"
+      />
+    </div>
 
-              color: "white",
-              fontFamily: "oswald, sans-serif",
-            }}
-          >
-            <div
-              className="no-preservatives-flex"
-              style={{
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-              }}
-            >
-              <div style={{ flex: "1 1 40%" }}>
-                <img
-                  src={momkids}
-                  alt="mom and kids"
-                  style={{ width: "100%", height: "auto", objectFit: "cover" }}
-                />
-              </div>
+    <div className="no-preservatives-content">
+      <div className="no-preservatives-text">
+        <h3 className="np-heading">
+          NO PRESERVATIVES <br />
+          NO CHEMICALS
+        </h3>
 
-              <div
-                style={{
-                  flex: "1 1 55%",
-                  padding: "10px",
-                  position: "relative",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "20px",
-                  }}
-                >
-                  <h3
-                    style={{
-                      fontSize: "50px",
-                      letterSpacing: "1px",
-                      margin: 0,
-                    }}
-                  >
-                    NO PRESERVATIVES <br />
-                    NO CHEMICALS
-                  </h3>
+        <h3 className="np-subheading">
+          PURELY HOME MADE AND <br /> ORGANICALLY SOURCED INGREDIENTS
+        </h3>
+      </div>
 
-                  <h3
-                    style={{
-                      fontSize: "50px",
-                      letterSpacing: "1px",
-                      margin: 0,
-                    }}
-                  >
-                    PURELY HOME MADE AND <br /> ORGANICALLY SOURCED INGREDIENTS
-                  </h3>
-                </div>
+      <div className="natural-stamp">
+        <img src={natural100} alt="100% natural" className="natural-stamp-img" />
+      </div>
+    </div>
+  </div>
+</div>
 
-                <div
-                  className="natural-stamp"
-                  style={{
-                    position: "absolute",
-                    bottom: "50%",
-                    right: "-35%",
-                  }}
-                >
-                  <img
-                    src={natural100}
-                    alt="natural-100%"
-                    style={{
-                      width: "35%",
-                      height: "auto",
-                      objectFit: "cover",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
 
           {/* WHY CHOOSE US */}
           <ChooseUs />
 
           {/* LOCK & SMILE */}
 
-          <div
-            style={{
-              backgroundImage: "url('/media/Nopreservatives.png')",
-              backgroundSize: "cover",
-              backgroundRepeat: "no-repeat",
-              padding: "20px 0 0 0",
-              height: "auto",
-              color: "white",
-              fontFamily: "oswald, sans-serif",
-            }}
-            className="lock-smile-background"
-          >
-            <div style={{ position: "relative" }}>
-              <div
-                className="lock-section"
-                style={{
-                  padding: "70px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <img
-                  src={lock}
-                  alt="Silver Lock"
-                  className="lock-image"
-                  style={{
-                    width: "25%",
-                    height: "auto",
-                    objectFit: "cover",
-                    zIndex: "999999",
-                  }}
-                />
-                <h3
-                  style={{
-                    fontSize: "40px",
-                    marginLeft: "-17%",
-                    letterSpacing: "1px",
-                  }}
-                >
-                  Unlock the path to <br />
-                  <span style={{ fontWeight: "900", fontSize: "65px" }}>
-                    Yummy Snacks
-                  </span>{" "}
-                  <br /> with a smile
-                </h3>
-                <img
-                  src={smile}
-                  alt="smile"
-                  className="smile-image"
-                  style={{
-                    width: "25%",
-                    height: "auto",
-                    objectFit: "cover",
-                    zIndex: "999999",
-                  }}
-                />
-              </div>
+       <div className="lock-smile-background" aria-hidden={false}>
+  <div className="lock-smile-inner">
+    <div className="lock-section">
+      <img src={lock} alt="Silver Lock" className="lock-image" />
 
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "20%",
-                  display: "flex",
-                  justifyContent: "center",
-                  width: "100%",
-                }}
-              >
-                <img
-                  src={linelock}
-                  alt="lines"
-                  className="line-image"
-                  style={{ width: "55%", height: "auto", objectFit: "cover" }}
-                />
-              </div>
-            </div>
-          </div>
+      <div className="lock-copy">
+        <h3 className="lock-heading">
+          Unlock the path to
+          <br />
+          <span className="lock-heading-strong">Yummy Snacks</span>
+          <br />
+          with a smile
+        </h3>
+      </div>
+
+      <img src={smile} alt="Smile" className="smile-image" />
+    </div>
+
+    <div className="lock-line-wrap" aria-hidden="true">
+      <img src={linelock} alt="" className="line-image" />
+    </div>
+  </div>
+</div>
+
           {/* REVIEW */}
           <Reviews />
 
