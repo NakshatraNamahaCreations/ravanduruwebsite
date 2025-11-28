@@ -27,7 +27,7 @@ export default function PaymentFailed() {
   useEffect(() => {
     const fadeInTimeout = setTimeout(() => setIsVisible(true), 100);
     const redirectTimeout = setTimeout(() => {
-      navigate("/carts");
+      navigate("/your-cart");
     }, 10000); // auto-redirect after 7s
 
     return () => {
@@ -37,7 +37,7 @@ export default function PaymentFailed() {
   }, [navigate]);
 
   // Actions
-  const handleRetryNow = () => navigate("/carts");
+  const handleRetryNow = () => navigate("/your-cart");
   const handleChangeMethod = () => navigate("/checkout?changeMethod=1");
   const handleViewOrders = () => navigate("/orders");
   const handleGoHome = () => navigate("/");

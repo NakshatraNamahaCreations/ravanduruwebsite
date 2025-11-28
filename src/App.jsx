@@ -29,6 +29,7 @@ import ProfileDetails from "./Pages/Account_Pages/Profile-Details";
 import CartToastProvider from "./Component/CartToastProvider";
 import OrderDetails from "./Pages/Account_Pages/OrderDetails";
 import Categories from "./Pages/Categories";
+import PaymentFailed from "./Pages/Cart/FailurePage";
 
 function App() {
   return (
@@ -62,6 +63,7 @@ function App() {
           <Route path="/order-details" element={<OrderDetails/>}/>
           <Route path="/address-details" element={<AddressForm/>}/>
           <Route path="/categories" element={<Categories/>}/>
+          <Route path="/payment-failed" element={<PaymentFailed/>}/>
         </Routes>
         <Footer />
       </Router>

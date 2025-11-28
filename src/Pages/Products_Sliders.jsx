@@ -232,9 +232,9 @@ export default function Products_Sliders() {
                     src={item.image}
                     alt={item.name}
                     loading="lazy"
-                    onError={(e) => {
+                  /*  onError={(e) => {
                       e.currentTarget.src = fallbackImg; // fallback if image 404/blocked
-                    }}
+                    }}*/
                   />
 
                   <div className="v-body">
