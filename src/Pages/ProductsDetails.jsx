@@ -949,47 +949,21 @@ const [eta, setEta] = useState(null);
 }
 
 import { Container, Button, Row, Col, Badge, Table } from "react-bootstrap";
-import wishlistheart from "/media/Whishlistheart.png";
-import Accordion from "react-bootstrap/Accordion";
-import visiblestar from "/media/Star-visible.png";
-import hiddenstar from "/media/Star-hidden.png";
-import ProductReviews from "./ProductReviews";
 import Products_Sliders from "./Products_Sliders";
-import Chakaliimageflip from "/media/Chakaliimageflip.png";
-import Chakaliimagereverse from "/media/Chakaliimage-reverse.png";
 import './ProductDetails.css';
 //import axios from "axios";
-
 import { FaHeart, FaCheckCircle } from "react-icons/fa";
-
-import lock from "/media/Silverlock.png";
-import smile from "/media/Smile.png";
-import linelock from "/media/whiteLine.png";
 import { useState, useEffect } from "react";
-import Reviews from "./Home_Pages/Reviews";
-import ReviewPopup from "./ReviewPopup";
 import { useParams, useNavigate } from "react-router-dom";
-import product from "/media/products.png";
 import { addToCart } from "../redux/cartSlice";
 import { useDispatch } from "react-redux";
-import Nopalmoil from "/media/Nopalmoil.png";
-import natural00 from "/media/natural00.png";
+
 import ScrollToTop from "../Component/ScrollToTop";
-// import SearchBar from "../Component/SearchBar";
-import agase from "/media/agase.png";
-import groundnutchatneypudi from "/media/groundnutchatneypudi.png";
-import cocnutchatneypudi from "/media/cocnutchatneypudi.png";
-import blendcoffeepowder from "/media/blendcoffeepowder.png";
-import avalakkimixture from "/media/avalakkimixture.jpg";
-import dryfruitsunde from "/media/dryfruitsunde.jpg";
-import bananachips from "/media/bananachips.png";
-import chakli from "/media/chakli.png";
-import powerstarblendcoffeepowder from "/media/powerstarblendcoffeepowder.png";
-import hunasethokku from "/media/hunasethokku.png";
-import sweets from "/media/sweets.jpg";
 
 
-const API_BASE = "https://api.ravandurustores.com";
+
+
+const API_BASE = "https://ravandurustores-backend.onrender.com";
 const toAbsolute = (img) =>
   typeof img === "string" && /^https?:\/\//i.test(img)
     ? img

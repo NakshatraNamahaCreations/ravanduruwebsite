@@ -18,7 +18,7 @@ const schema = yup.object({
   password: yup.string().min(6, "Min 6 characters").required("Password is required"),
 });
 
-const API_BASE = "https://api.ravandurustores.com";
+const API_BASE = "https://ravandurustores-backend.onrender.com";
 
 const Login = () => {
   const [isVisible, setIsVisible] = useState(false);

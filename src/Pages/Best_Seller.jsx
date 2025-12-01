@@ -13,7 +13,7 @@ export default function Best_Seller() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const API_BASE = "https://api.ravandurustores.com";
+  const API_BASE = "https://ravandurustores-backend.onrender.com";
   const PRODUCTS_URL = `${API_BASE}/api/products`;
 
   useEffect(() => {
@@ -223,12 +223,7 @@ export default function Best_Seller() {
                         src={item.image} // ✅ use `image`, not `images`
                         alt={item.name}
                         className="product-image"
-                        style={{
-                          maxWidth: "100%",
-                          maxHeight: "100%",
-                          objectFit: "cover",
-                          display: "block",
-                        }}
+                        
                         onError={(e) => {
                           // avoid infinite loop
                           e.currentTarget.onerror = null;

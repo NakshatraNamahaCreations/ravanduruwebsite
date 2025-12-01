@@ -15,8 +15,11 @@ import { useSelector } from "react-redux";
 import "./CartIcon.css";
 import { useNavigate } from "react-router-dom";
 
-const CATEGORIES_URL = "https://ravandurustores-backend.onrender.com/api/categories";
-const PRODUCTS_URL = "https://ravandurustores-backend.onrender.com/api/products";
+//const CATEGORIES_URL = "https://ravandurustores-backend.onrender.com/api/categories";
+//const PRODUCTS_URL = "https://ravandurustores-backend.onrender.com/api/products";
+
+const CATEGORIES_URL = "https://api.ravandurustores.com/api/categories";
+const PRODUCTS_URL = "https://api.ravandurustores.com/api/products";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h cache
 
 const encodeRFC3986 = (s = "") =>
@@ -53,7 +56,8 @@ async function loadProductIndex() {
       name: displayName,
       link: `/products/${nameNoSpaces}`,
       imageUrl: p.images?.[0]
-        ? `https://ravandurustores-backend.onrender.com${p.images[0]}`
+       ? `https://ravandurustores-backend.onrender.com${p.images[0]}`
+     // ? `https://api.ravandurustores.com${p.images[0]}`
         : "/media/placeholder.png",
       categoryName: p.category || "",
       slug: p.slug || p._id,

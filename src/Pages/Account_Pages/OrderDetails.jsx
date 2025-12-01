@@ -3,7 +3,7 @@ import { Container, Table, Row, Col, Modal, Button, Spinner, Alert } from "react
 import DownloadPDF from "../../DownloadPDF";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const API_BASE = "https://api.ravandurustores.com"; // change if needed
+const API_BASE = "https://ravandurustores-backend.onrender.com"; // change if needed
 
 // ---------- helpers ----------
 const toNum = (v) => {

@@ -21,7 +21,7 @@ export default function Categories() {
   const navigate = useNavigate();
 
   // ----- API -----
-  const API_ORIGIN = "https://api.ravandurustores.com";
+  const API_ORIGIN = "https://ravandurustores-backend.onrender.com";
   const PRODUCTS_URL = `${API_ORIGIN}/api/products`;
   const CATEGORIES_URL = `${API_ORIGIN}/api/categories`;
 
