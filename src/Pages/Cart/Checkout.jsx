@@ -3202,6 +3202,35 @@ export default function Checkout() {
     }
   };
 
+  /* --------------------------- DELETE ADDRESS -------------------------- */
+  const handleDeleteAddress = async (id) => {
+    if (!window.confirm("Delete this address permanently?")) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/api/addresses/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || "Delete failed");
+      }
+
+      // Update state and selectedId safely
+      setAddresses((prev) => {
+        const next = prev.filter((x) => (x._id || x.id) !== id);
+        if (selectedId === id) {
+          const first = next[0];
+          setSelectedId(first ? first._id || first.id : null);
+        }
+        return next;
+      });
+    } catch (e) {
+      alert(e.message || "Could not delete address.");
+    }
+  };
+
   /* ------------------------------ PRICING ------------------------------ */
   const [pricing, setPricing] = useState({});
   const [productsById, setProductsById] = useState({});
@@ -3355,78 +3384,77 @@ export default function Checkout() {
   }
 
   /* ------------------------------- PAY NOW ----------------------------- */
-const handlePayNow = async () => {
-  if (!cartItems || cartItems.length === 0) {
-    alert("Your cart is empty. Please add items to proceed.");
-    navigate("/best-seller");
-    return;
-  }
-  if (!selectedAddress || !selectedAddress._id) {
-    alert("Please select or add a valid address before proceeding to payment.");
-    return;
-  }
-
-  const currentUser = getAuthUser();
-  if (
-    !currentUser ||
-    !(currentUser.id || currentUser._id || currentUser.userId)
-  ) {
-    alert("Please log in before making a payment.");
-    return;
-  }
-
-  const customerId = currentUser.id || currentUser._id || currentUser.userId;
-
-  setIsLoading(true);
-  try {
-    const items = cartToApiItems(cartItems);
-    const amount = grandTotal; // ✅ same as UI
-
-    const res = await fetch(`${API_BASE}/api/payments/initiate`, {
-      method: "POST",
-      headers: authHeaders(),
-      body: JSON.stringify({
-        amount,
-        items,
-        addressId: selectedAddress._id,
-        customerId,
-      }),
-    });
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error("Backend payment error:", res.status, errorText);
-      throw new Error(errorText || `HTTP error ${res.status}`);
+  const handlePayNow = async () => {
+    if (!cartItems || cartItems.length === 0) {
+      alert("Your cart is empty. Please add items to proceed.");
+      navigate("/best-seller");
+      return;
+    }
+    if (!selectedAddress || !selectedAddress._id) {
+      alert("Please select or add a valid address before proceeding to payment.");
+      return;
     }
 
-    const paymentResponse = await res.json();
-    const redirectUrl = paymentResponse?.phonepeResponse?.redirectUrl;
-    const orderId =
-      paymentResponse?.phonepeResponse?.merchantTransactionId ||
-      paymentResponse?.phonepeResponse?.orderId;
+    const currentUser = getAuthUser();
+    if (
+      !currentUser ||
+      !(currentUser.id || currentUser._id || currentUser.userId)
+    ) {
+      alert("Please log in before making a payment.");
+      return;
+    }
 
-    if (redirectUrl && orderId) {
-      localStorage.setItem(
-        "orderDetails",
-        JSON.stringify({
+    const customerId = currentUser.id || currentUser._id || currentUser.userId;
+
+    setIsLoading(true);
+    try {
+      const items = cartToApiItems(cartItems);
+      const amount = grandTotal; // ✅ same as UI
+
+      const res = await fetch(`${API_BASE}/api/payments/initiate`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({
+          amount,
           items,
-          grandTotal: amount,
           addressId: selectedAddress._id,
-          orderId,
-        })
-      );
-      window.location.href = redirectUrl; // 🔁 Go to PhonePe
-    } else {
-      setIsLoading(false);
-      alert("Payment initiation failed. No redirect URL.");
-    }
-  } catch (err) {
-    console.error("Payment initiation error:", err);
-    setIsLoading(false);
-    alert("Error initiating payment.");
-  }
-};
+          customerId,
+        }),
+      });
 
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Backend payment error:", res.status, errorText);
+        throw new Error(errorText || `HTTP error ${res.status}`);
+      }
+
+      const paymentResponse = await res.json();
+      const redirectUrl = paymentResponse?.phonepeResponse?.redirectUrl;
+      const orderId =
+        paymentResponse?.phonepeResponse?.merchantTransactionId ||
+        paymentResponse?.phonepeResponse?.orderId;
+
+      if (redirectUrl && orderId) {
+        localStorage.setItem(
+          "orderDetails",
+          JSON.stringify({
+            items,
+            grandTotal: amount,
+            addressId: selectedAddress._id,
+            orderId,
+          })
+        );
+        window.location.href = redirectUrl; // 🔁 Go to PhonePe
+      } else {
+        setIsLoading(false);
+        alert("Payment initiation failed. No redirect URL.");
+      }
+    } catch (err) {
+      console.error("Payment initiation error:", err);
+      setIsLoading(false);
+      alert("Error initiating payment.");
+    }
+  };
 
   /* --------------------------------- UI -------------------------------- */
   return (
@@ -3621,6 +3649,24 @@ const handlePayNow = async () => {
                           >
                             {a.email}
                           </div>
+                        </div>
+
+                        {/* Delete button */}
+                        <div
+                          className="addrActions"
+                          style={{
+                            marginTop: "8px",
+                            display: "flex",
+                            justifyContent: "flex-end",
+                          }}
+                        >
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleDeleteAddress(id)}
+                          >
+                            Delete
+                          </Button>
                         </div>
                       </div>
                     );
