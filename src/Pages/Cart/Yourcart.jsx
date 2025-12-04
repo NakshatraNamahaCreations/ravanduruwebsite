@@ -10,7 +10,7 @@ import "./YourCart.css";
 // ----------------------------
 // Config — match ProductDetails
 // ----------------------------
-const API_BASE = "https://ravandurustores-backend.onrender.com";
+const API_BASE = "https://api.ravandurustores.com";
 
 // same helpers you used in ProductDetails
 const clampPct = (pct) => Math.min(100, Math.max(0, Number(pct || 0)));

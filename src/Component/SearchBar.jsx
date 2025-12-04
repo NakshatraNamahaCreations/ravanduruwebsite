@@ -2,9 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 /* ========= CONFIG ========= */
-//const API_ENDPOINT = "https://api.ravandurustores.com/api/products"; 
+const API_ENDPOINT = "https://api.ravandurustores.com/api/products"; 
 
-const API_ENDPOINT = "https://ravandurustores-backend.onrender.com/api/products";// fixed path
+//const API_ENDPOINT = "https://ravandurustores-backend.onrender.com/api/products";// fixed path
 
 /* utils */
 const slugify = (s = "") =>

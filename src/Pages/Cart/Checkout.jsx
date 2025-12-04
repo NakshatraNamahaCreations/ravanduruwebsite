@@ -2910,7 +2910,7 @@ import { useSelector } from "react-redux";
 
 import "./Checkout.css";
 
-const API_BASE = "https://ravandurustores-backend.onrender.com";
+const API_BASE = "https://api.ravandurustores.com";
 
 /* --------------------------- Small helpers --------------------------- */
 const clampPct = (pct) => Math.min(100, Math.max(0, Number(pct || 0)));

@@ -10,7 +10,7 @@ import BannaleafRU from "/media/BannaleafRU.png";
 import Loginpageline from "/media/Loginpageline.png";
 import ScrollToTop from "../../Component/ScrollToTop";
 
-const API_BASE = "https://ravandurustores-backend.onrender.com";
+const API_BASE = "https://api.ravandurustores.com";
 
 export default function Create_Account() {
   const [isVisible, setIsVisible] = useState(false);

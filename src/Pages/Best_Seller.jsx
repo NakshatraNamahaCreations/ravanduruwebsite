@@ -13,7 +13,7 @@ export default function Best_Seller() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const API_BASE = "https://ravandurustores-backend.onrender.com";
+  const API_BASE = "https://api.ravandurustores.com";
   const PRODUCTS_URL = `${API_BASE}/api/products`;
 
   useEffect(() => {

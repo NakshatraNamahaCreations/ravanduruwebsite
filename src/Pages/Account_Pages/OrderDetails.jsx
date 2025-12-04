@@ -12,7 +12,7 @@ import {
 import DownloadPDF from "../../DownloadPDF";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const API_BASE = "https://ravandurustores-backend.onrender.com";
+const API_BASE = "https://api.ravandurustores.com";
 
 // ---------- helpers ----------
 const toNum = (v) => {

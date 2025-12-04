@@ -16,7 +16,7 @@ import ScrollToTop from "../../Component/ScrollToTop";
 import { FaTrash } from "react-icons/fa";
 import "./Wishlist.css"
 
-const API_BASE = "https://ravandurustores-backend.onrender.com";
+const API_BASE = "https://api.ravandurustores.com";
 
 export default function Wishlist() {
   const [isVisible, setIsVisible] = useState(false);
