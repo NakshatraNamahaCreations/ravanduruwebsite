@@ -2,7 +2,6 @@ import { Container, Button } from "react-bootstrap";
 import Form from "react-bootstrap/Form";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-//import axios from "axios";
 
 import BannaleafRd from "/media/BannaleafRd.png";
 import Rectangle from "/media/Rectangle.png";
@@ -10,11 +9,12 @@ import plate from "/media/Layer_20.png";
 import BannaleafRU from "/media/BannaleafRU.png";
 import Loginpageline from "/media/Loginpageline.png";
 import ScrollToTop from "../../Component/ScrollToTop";
-const API_BASE = "https://ravandurustores-backend.onrender.com"; 
+
+const API_BASE = "https://ravandurustores-backend.onrender.com";
 
 export default function Create_Account() {
   const [isVisible, setIsVisible] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,13 +26,11 @@ export default function Create_Account() {
     window.scrollTo(0, 0);
   }, []);
 
-  // Controlled form state (UI uses camelCase)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     password: "",
-    // confirmPassword: "",
     mobileNumber: "",
     smsConsent: false,
   });
@@ -44,46 +42,79 @@ export default function Create_Account() {
     setFormData((s) => ({ ...s, [name]: type === "checkbox" ? checked : value }));
   };
 
+  // ---------------------------------------------------
+  // VALIDATION LOGIC
+  // ---------------------------------------------------
+  const validateForm = () => {
+    const newErrors = {};
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  // minimal client validation …
-  if (!formData.firstName.trim() || !formData.lastName.trim()) return alert("Enter name");
-  if (!formData.email.trim()) return alert("Enter email");
-  if (formData.password.length < 6) return alert("Password must be at least 6 chars");
-
-  const payload = {
-    firstname: formData.firstName.trim(),
-    lastname: formData.lastName.trim(),
-    email: formData.email.trim(),
-    password: formData.password,
-    mobilenumber: formData.mobileNumber.trim(),
-  };
-
-  try {
-    const resp = await fetch(`${API_BASE}/api/customers/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      // add this if your API sets auth cookies:
-      // credentials: "include",
-      body: JSON.stringify(payload),
-    });
-
-    if (!resp.ok) {
-      const text = await resp.text().catch(() => "");
-      throw new Error(`HTTP ${resp.status} ${resp.statusText} ${text}`);
+    // First Name
+    if (!/^[A-Za-z]{2,}$/.test(formData.firstName)) {
+      newErrors.firstName =
+        "First name should contain only letters and be at least 2 characters.";
     }
 
-    const data = await resp.json().catch(() => ({}));
-    // success
-    alert("Account created! Redirecting to login…");
-    navigate("/login");
-  } catch (err) {
-    console.error("Register failed:", err);
-    alert(err.message || "Something went wrong. Please try again.");
-  }
-};
+    // Last Name
+    if (!/^[A-Za-z]{1,}$/.test(formData.lastName)) {
+      newErrors.lastName =
+        "Last name should contain only letters and be at least 1 characters.";
+    }
+
+    // Email
+    if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+      newErrors.email = "Enter a valid email address.";
+    }
+
+    // Mobile number (only digits & exactly 10)
+    if (!/^\d{10}$/.test(formData.mobileNumber)) {
+      newErrors.mobileNumber =
+        "Mobile number must be exactly 10 digits and only numbers allowed.";
+    }
+
+    // Password
+    if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // ---------------------------------------------------
+  // SUBMIT HANDLER
+  // ---------------------------------------------------
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    const payload = {
+      firstname: formData.firstName.trim(),
+      lastname: formData.lastName.trim(),
+      email: formData.email.trim(),
+      password: formData.password,
+      mobilenumber: formData.mobileNumber.trim(),
+    };
+
+    try {
+      const resp = await fetch(`${API_BASE}/api/customers/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text().catch(() => "");
+        throw new Error(`HTTP ${resp.status} ${resp.statusText} ${text}`);
+      }
+
+      alert("Account created! Redirecting to login…");
+      navigate("/login");
+    } catch (err) {
+      console.error("Register failed:", err);
+      alert(err.message || "Something went wrong. Please try again.");
+    }
+  };
 
   return (
     <>
@@ -94,19 +125,19 @@ const handleSubmit = async (e) => {
         <div style={{ position: "relative", margin: 0 }} className="login-background">
           {/* Background decorations */}
           <div style={{ position: "absolute", top: "-25%", pointerEvents: "none", zIndex: 1 }}>
-            <img src={BannaleafRd} alt="Banana Leaf" style={{ width: "30%", objectFit: "cover" }} />
+            <img src={BannaleafRd} alt="Banana Leaf" style={{ width: "30%" }} />
           </div>
 
           <div style={{ position: "absolute", top: "70%", pointerEvents: "none", zIndex: 1 }}>
-            <img src={Rectangle} alt="Rectangle" style={{ width: "25%", objectFit: "cover" }} />
+            <img src={Rectangle} alt="Rectangle" style={{ width: "25%" }} />
           </div>
 
           <div style={{ position: "absolute", right: "-50%", pointerEvents: "none", zIndex: 1 }}>
-            <img src={plate} alt="Plate" style={{ width: "25%", objectFit: "cover" }} />
+            <img src={plate} alt="Plate" style={{ width: "25%" }} />
           </div>
 
           <div style={{ position: "absolute", top: "70%", right: "-42%", pointerEvents: "none", zIndex: 1 }}>
-            <img src={BannaleafRU} alt="Banana Leaf" style={{ width: "25%", objectFit: "cover" }} />
+            <img src={BannaleafRU} alt="Banana Leaf" style={{ width: "25%" }} />
           </div>
 
           <Container
@@ -138,8 +169,11 @@ const handleSubmit = async (e) => {
                 Create Account
               </h2>
 
+              {/* ---------------------------------------------------
+                    FORM START
+              --------------------------------------------------- */}
               <Form onSubmit={handleSubmit}>
-                {/* First Name */}
+                {/* FIRST NAME */}
                 <Form.Group className="mb-4">
                   <Form.Control
                     type="text"
@@ -149,17 +183,17 @@ const handleSubmit = async (e) => {
                     onChange={handleChange}
                     style={{
                       height: 40,
-                      border: `1.5px solid ${brand}`,
-                      fontFamily: "poppins, sans-serif",
+                      border: `1.5px solid ${errors.firstName ? "red" : brand}`,
                       fontSize: 18,
                     }}
-                    className="input-account-forms search-input"
-                    autoFocus
                     required
                   />
+                  {errors.firstName && (
+                    <small style={{ color: "red" }}>{errors.firstName}</small>
+                  )}
                 </Form.Group>
 
-                {/* Last Name */}
+                {/* LAST NAME */}
                 <Form.Group className="mb-4">
                   <Form.Control
                     type="text"
@@ -169,16 +203,17 @@ const handleSubmit = async (e) => {
                     onChange={handleChange}
                     style={{
                       height: 40,
-                      border: `1.5px solid ${brand}`,
-                      fontFamily: "poppins, sans-serif",
+                      border: `1.5px solid ${errors.lastName ? "red" : brand}`,
                       fontSize: 18,
                     }}
-                    className="input-account-forms search-input"
                     required
                   />
+                  {errors.lastName && (
+                    <small style={{ color: "red" }}>{errors.lastName}</small>
+                  )}
                 </Form.Group>
 
-                {/* Email */}
+                {/* EMAIL */}
                 <Form.Group className="mb-4">
                   <Form.Control
                     type="email"
@@ -188,16 +223,17 @@ const handleSubmit = async (e) => {
                     onChange={handleChange}
                     style={{
                       height: 40,
-                      border: `1.5px solid ${brand}`,
-                      fontFamily: "poppins, sans-serif",
+                      border: `1.5px solid ${errors.email ? "red" : brand}`,
                       fontSize: 18,
                     }}
-                    className="input-account-forms search-input"
                     required
                   />
+                  {errors.email && (
+                    <small style={{ color: "red" }}>{errors.email}</small>
+                  )}
                 </Form.Group>
 
-                {/* Mobile Number */}
+                {/* MOBILE */}
                 <Form.Group className="mb-4">
                   <Form.Control
                     type="tel"
@@ -205,17 +241,19 @@ const handleSubmit = async (e) => {
                     placeholder="Mobile Number"
                     value={formData.mobileNumber}
                     onChange={handleChange}
+                    maxLength={10}
                     style={{
                       height: 40,
-                      border: `1.5px solid ${brand}`,
-                      fontFamily: "poppins, sans-serif",
+                      border: `1.5px solid ${errors.mobileNumber ? "red" : brand}`,
                       fontSize: 18,
                     }}
-                    className="input-account-forms search-input"
                   />
+                  {errors.mobileNumber && (
+                    <small style={{ color: "red" }}>{errors.mobileNumber}</small>
+                  )}
                 </Form.Group>
 
-                {/* Password */}
+                {/* PASSWORD */}
                 <Form.Group className="mb-4">
                   <Form.Control
                     type="password"
@@ -225,47 +263,17 @@ const handleSubmit = async (e) => {
                     onChange={handleChange}
                     style={{
                       height: 40,
-                      border: `1.5px solid ${brand}`,
-                      fontFamily: "poppins, sans-serif",
+                      border: `1.5px solid ${errors.password ? "red" : brand}`,
                       fontSize: 18,
                     }}
-                    className="input-account-forms search-input"
                     required
                   />
+                  {errors.password && (
+                    <small style={{ color: "red" }}>{errors.password}</small>
+                  )}
                 </Form.Group>
 
-                {/* Confirm Password */}
-                {/* <Form.Group className="mb-3">
-                  <Form.Control
-                    type="password"
-                    name="confirmPassword"
-                    placeholder="Confirm Password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    style={{
-                      height: 40,
-                      border: `1.5px solid ${brand}`,
-                      fontFamily: "poppins, sans-serif",
-                      fontSize: 18,
-                    }}
-                    className="input-account-forms search-input"
-                    required
-                  />
-                </Form.Group> */}
-
-                {/* SMS Consent */}
-                {/* <Form.Group className="mb-3">
-                  <Form.Check
-                    type="checkbox"
-                    id="smsConsent"
-                    name="smsConsent"
-                    label="I agree to receive order updates via SMS"
-                    checked={formData.smsConsent}
-                    onChange={handleChange}
-                  />
-                </Form.Group> */}
-
-                {/* Submit */}
+                {/* SUBMIT BUTTON */}
                 <Button
                   variant="none"
                   type="submit"
@@ -281,10 +289,8 @@ const handleSubmit = async (e) => {
                     backgroundColor: "#97d7c6",
                     fontSize: 20,
                     letterSpacing: "1px",
-                    fontFamily: "poppins, sans-serif",
-                    border: "none",
                     margin: "20px auto",
-                    borderRadius: 0,
+                    border: "none",
                   }}
                 >
                   Submit
@@ -342,10 +348,8 @@ const handleSubmit = async (e) => {
                   color: brand,
                   backgroundColor: "#97d7c6",
                   fontSize: 20,
-                  letterSpacing: "1px",
                   textDecoration: "none",
-                  fontFamily: "poppins, sans-serif",
-                  border: "none",
+                  letterSpacing: "1px",
                   margin: "20px auto",
                 }}
                 className="login-buttons"

@@ -191,7 +191,7 @@ export default function Home() {
                       bottom: 0,
                       backgroundImage:
                         "url('/media/StoneSmasher_Watermark.png')",
-                      backgroundSize: "50%",
+                      backgroundSize: "35%",
                       backgroundRepeat: "no-repeat",
                       backgroundPosition: "center",
                       zIndex: 0,

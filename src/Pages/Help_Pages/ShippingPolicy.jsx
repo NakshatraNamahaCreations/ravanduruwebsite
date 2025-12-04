@@ -30,7 +30,7 @@ export default function ShippingPolicy(){
         {/* <Navbar_Menu /> */}
 
         {/* SEARCH BAR */}
-        <SearchBar />
+      {/*}  <SearchBar />*/}
 
         {/* SHIPPING POLICY */}
         <Container>

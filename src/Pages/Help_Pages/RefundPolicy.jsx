@@ -33,7 +33,7 @@ export default function RefundPolicy() {
         {/* <Navbar_Menu /> */}
 
         {/* SEARCH BAR */}
-        <SearchBar />
+     {/*}   <SearchBar />*/}
 
         {/* REFUND POLICY */}
         <Container>

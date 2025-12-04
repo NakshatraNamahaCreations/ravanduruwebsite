@@ -31,7 +31,7 @@ export default function Privacy_Policy() {
         {/* <Navbar_Menu /> */}
 
         {/* SEARCH BAR */}
-        <SearchBar />
+      {/*}  <SearchBar />*/}
         
         {/* PRIVACY POLICY */}
         <Container>

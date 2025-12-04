@@ -1480,6 +1480,7 @@ input.form-control.input-addressdetails:-moz-placeholder { color: #222 !importan
   object-fit: cover;
   border-radius: 6px;
   display: block;
+  margin-left: 25px;
 }
 
 /* right: content */

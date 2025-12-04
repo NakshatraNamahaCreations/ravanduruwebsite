@@ -31,7 +31,7 @@ export default function TermsConditions() {
         {/* <Navbar_Menu /> */}
 
         {/* SEARCH BAR */}
-        <SearchBar />
+       {/*} <SearchBar />*/}
 
         {/* TERMS & CONDITION */}
 

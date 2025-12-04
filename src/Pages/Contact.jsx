@@ -17,25 +17,42 @@ import { useState, useEffect } from "react";
 import ScrollToTop from "../Component/ScrollToTop";
 
 const schema = yup.object().shape({
-  firstName: yup.string().required("First name is required"),
-  lastName: yup.string().required("Last name is required"),
+  firstName: yup
+    .string()
+    .matches(/^[A-Za-z\s]+$/, "First name must contain only letters")
+    .min(2, "First name must be at least 2 characters")
+    .max(30, "First name is too long")
+    .required("First name is required"),
+
+  lastName: yup
+    .string()
+    .matches(/^[A-Za-z\s]+$/, "Last name must contain only letters")
+    .min(2, "Last name must be at least 2 characters")
+    .max(30, "Last name is too long")
+    .required("Last name is required"),
+
   email: yup
     .string()
-    .email("Invalid email format")
+    .email("Please enter a valid email address")
     .required("Email is required"),
+
   phoneCode: yup
     .string()
-    .matches(/^\+\d{1,4}$/, "Invalid phone code (e.g. +1)")
+    .matches(/^\+\d{1,4}$/, "Phone code must look like +91")
     .required("Phone code is required"),
+
   phoneNumber: yup
     .string()
-    .matches(/^\d{7,15}$/, "Invalid phone number")
+    .matches(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number")
     .required("Phone number is required"),
+
   message: yup
     .string()
-    .min(10, "Message must be at least 10 characters")
+    .min(10, "Message must be at least 10 characters long")
+    .max(500, "Message cannot exceed 500 characters")
     .required("Message is required"),
 });
+
 
 export default function Contact() {
   const [isVisible, setIsVisible] = useState(false);
@@ -287,14 +304,16 @@ export default function Contact() {
                   >
                     {/* First Name */}
                     <Form.Group className="mb-3">
-                      <Form.Control
-                        type="text"
-                        placeholder="First Name"
-                        {...register("firstName")}
-                        isInvalid={!!errors.firstName}
-                        style={{ height: "75px", fontSize: "20px" }}
-                        className="input-account-forms search-input"
-                      />
+                    <Form.Control
+  type="text"
+  placeholder="First Name"
+  {...register("firstName")}
+  isInvalid={!!errors.firstName}
+  maxLength={30}
+  style={{ height: "75px", fontSize: "20px" }}
+  className="input-account-forms search-input"
+/>
+
                       <Form.Control.Feedback type="invalid">
                         {errors.firstName?.message}
                       </Form.Control.Feedback>
@@ -303,13 +322,15 @@ export default function Contact() {
                     {/* Last Name */}
                     <Form.Group className="mb-3">
                       <Form.Control
-                        type="text"
-                        placeholder="Last Name"
-                        {...register("lastName")}
-                        isInvalid={!!errors.lastName}
-                        style={{ height: "75px", fontSize: "20px" }}
-                        className="input-account-forms search-input"
-                      />
+  type="text"
+  placeholder="Last Name"
+  {...register("lastName")}
+  isInvalid={!!errors.lastName}
+  maxLength={30}
+  style={{ height: "75px", fontSize: "20px" }}
+  className="input-account-forms search-input"
+/>
+
                       <Form.Control.Feedback type="invalid">
                         {errors.lastName?.message}
                       </Form.Control.Feedback>
@@ -317,14 +338,17 @@ export default function Contact() {
 
                     {/* Email */}
                     <Form.Group className="mb-3">
-                      <Form.Control
-                        type="email"
-                        placeholder="Email"
-                        {...register("email")}
-                        isInvalid={!!errors.email}
-                        style={{ height: "75px", fontSize: "20px" }}
-                        className="input-account-forms search-input"
-                      />
+                     <Form.Control
+  type="email"
+  placeholder="Email"
+  {...register("email")}
+  isInvalid={!!errors.email}
+  inputMode="email"
+  autoComplete="email"
+  style={{ height: "75px", fontSize: "20px" }}
+  className="input-account-forms search-input"
+/>
+
                       <Form.Control.Feedback type="invalid">
                         {errors.email?.message}
                       </Form.Control.Feedback>
@@ -334,14 +358,16 @@ export default function Contact() {
                     <Row>
                       <Col md={4}>
                         <Form.Group className="mb-3">
-                          <Form.Control
-                            type="text"
-                            placeholder="+91"
-                            {...register("phoneCode")}
-                            isInvalid={!!errors.phoneCode}
-                            style={{ height: "75px", fontSize: "20px" }}
-                            className="input-account-forms search-input"
-                          />
+                         <Form.Control
+  type="text"
+  placeholder="+91"
+  {...register("phoneCode")}
+  isInvalid={!!errors.phoneCode}
+  maxLength={4}
+  style={{ height: "75px", fontSize: "20px" }}
+  className="input-account-forms search-input"
+/>
+
                           <Form.Control.Feedback type="invalid">
                             {errors.phoneCode?.message}
                           </Form.Control.Feedback>
@@ -349,14 +375,17 @@ export default function Contact() {
                       </Col>
                       <Col md={8}>
                         <Form.Group className="mb-3">
-                          <Form.Control
-                            type="text"
-                            placeholder="Phone Number"
-                            {...register("phoneNumber")}
-                            isInvalid={!!errors.phoneNumber}
-                            style={{ height: "75px", fontSize: "20px" }}
-                            className="input-account-forms search-input"
-                          />
+                         <Form.Control
+  type="text"
+  placeholder="Phone Number"
+  {...register("phoneNumber")}
+  isInvalid={!!errors.phoneNumber}
+  maxLength={10}
+  inputMode="numeric"
+  style={{ height: "75px", fontSize: "20px" }}
+  className="input-account-forms search-input"
+/>
+
                           <Form.Control.Feedback type="invalid">
                             {errors.phoneNumber?.message}
                           </Form.Control.Feedback>
@@ -366,15 +395,17 @@ export default function Contact() {
 
                     {/* Message */}
                     <Form.Group className="mb-3">
-                      <Form.Control
-                        as="textarea"
-                        rows={3}
-                        placeholder="Send Message"
-                        {...register("message")}
-                        isInvalid={!!errors.message}
-                        style={{ height: "200px", fontSize: "20px" }}
-                        className="input-account-forms search-input"
-                      />
+                     <Form.Control
+  as="textarea"
+  rows={3}
+  placeholder="Send Message"
+  {...register("message")}
+  isInvalid={!!errors.message}
+  maxLength={500}
+  style={{ height: "200px", fontSize: "20px" }}
+  className="input-account-forms search-input"
+/>
+
                       <Form.Control.Feedback type="invalid">
                         {errors.message?.message}
                       </Form.Control.Feedback>

@@ -1113,7 +1113,8 @@ const handleAddToWishlist = async () => {
       return;
     }
     try {
-     await fetch("https://api.ravandurustores.com/api/wishlist/add", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id, productId: product.id }) });
+    // await fetch("https://api.ravandurustores.com/api/wishlist/add", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id, productId: product.id }) });
+      await fetch("https://ravandurustores-backend.onrender.com/api/wishlist/add", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: user.id, productId: product.id }) });
 
       setIsInWishlist(true);
       alert("Product added to wishlist!");

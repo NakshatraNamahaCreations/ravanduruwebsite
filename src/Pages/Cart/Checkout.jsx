@@ -2901,7 +2901,7 @@ const handlePayNow = async () => {
 }*/}
 
 
-// src/pages/Checkout.jsx
+
 // Checkout.jsx
 import { Container, Form, Row, Col, Button, Card } from "react-bootstrap";
 import { useState, useEffect, useMemo } from "react";
@@ -2937,7 +2937,6 @@ const parseSelectedWeight = (str) => {
 
 const norm = (v) => String(v || "").toLowerCase().replace(/\s+/g, "");
 
-/* ----------------------------- Auth utils ---------------------------- */
 function decodeJwtPayload(token = "") {
   try {
     const [, payload] = String(token).split(".");
@@ -2945,8 +2944,7 @@ function decodeJwtPayload(token = "") {
     const b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
     const pad = "=".repeat((4 - (b64.length % 4)) % 4);
     const json = atob(b64 + pad);
-    const obj = JSON.parse(json);
-    return obj && typeof obj === "object" ? obj : null;
+    return JSON.parse(json);
   } catch {
     return null;
   }
@@ -2960,14 +2958,17 @@ function getAuthUser() {
       if (u && typeof u === "object") return u;
     }
   } catch {}
+
   const token = localStorage.getItem("token") || "";
-  const payload = decodeJwtPayload(token);
-  if (!payload) return null;
+  const p = decodeJwtPayload(token);
+
+  if (!p) return null;
+
   return {
-    _id: payload._id || payload.id || payload.userId || payload.sub || null,
-    id: payload.id || payload._id || payload.userId || payload.sub || null,
-    userId: payload.userId || payload.sub || payload.id || payload._id || null,
-    email: payload.email || payload.user_email || null,
+    _id: p._id || p.id || p.userId || p.sub || null,
+    id: p.id || p._id || p.userId || p.sub || null,
+    userId: p.userId || p.sub || p.id || p._id || null,
+    email: p.email || p.user_email || null,
   };
 }
 
@@ -2989,9 +2990,9 @@ export default function Checkout() {
   const [addrLoading, setAddrLoading] = useState(false);
   const [addrError, setAddrError] = useState("");
 
-  // Add-new form toggle & state
   const [showForm, setShowForm] = useState(false);
   const [savingNew, setSavingNew] = useState(false);
+
   const [form, setForm] = useState({
     email: "",
     firstName: "",
@@ -3006,19 +3007,19 @@ export default function Checkout() {
     country: "India",
   });
 
-  // pay-now button loading
   const [isLoading, setIsLoading] = useState(false);
 
   const handleFormChange = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
-  /* ----------------------- FETCH ADDRESSES ON MOUNT -------------------- */
+  /* ----------------------- FETCH ADDRESSES ----------------------------- */
   useEffect(() => {
     let mounted = true;
 
     async function loadAddresses() {
       setAddrLoading(true);
       setAddrError("");
+
       try {
         const res = await fetch(`${API_BASE}/api/addresses`, {
           method: "GET",
@@ -3036,52 +3037,55 @@ export default function Checkout() {
         }
 
         if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(
-            text || `Failed to fetch addresses (HTTP ${res.status})`
-          );
+          throw new Error(`Failed to fetch addresses (HTTP ${res.status})`);
         }
 
         const data = await res.json();
         const arr =
           (Array.isArray(data) && data) ||
-          (Array.isArray(data?.addresses) && data.addresses) ||
-          (Array.isArray(data?.data) && data.data) ||
-          (Array.isArray(data?.items) && data.items) ||
+          data.addresses ||
+          data.data ||
+          data.items ||
           [];
 
         const current = getAuthUser();
         let mine = arr;
+
         if (current) {
-          const uid = String(
-            current.id || current._id || current.userId || current.sub || ""
-          ).trim();
+          const uid = String(current.id || current._id).trim();
           const email = String(current.email || "").toLowerCase().trim();
+
           mine = arr.filter((a) => {
-            const aUid = String(
-              a.userId ||
-                a.user_id ||
-                (a.user && (a.user._id || a.user.id)) ||
-                a.createdBy ||
-                ""
-            ).trim();
+            const aUid = String(a.userId || "").trim();
             const aEmail = String(a.email || "").toLowerCase().trim();
-            return (
-              (uid && aUid && aUid === uid) ||
-              (email && aEmail && aEmail === email)
-            );
+            return aUid === uid || aEmail === email;
           });
         }
 
         if (!mounted) return;
         setAddresses(mine);
 
-        const preferred =
-          mine.find((x) => x.isDefault || x.default) || mine[mine.length - 1];
+        const storedPref = localStorage.getItem("preferredAddressId");
+
+        let preferred = null;
+
+        if (storedPref) {
+          preferred = mine.find(
+            (x) =>
+              (x._id || x.id)?.toString() === storedPref.toString()
+          );
+        }
+
+        if (!preferred) {
+          preferred =
+            mine.find((x) => x.isDefault || x.default) ||
+            mine[mine.length - 1];
+        }
+
         setSelectedId(preferred?._id || preferred?.id || null);
       } catch (e) {
         if (!mounted) return;
-        setAddrError(e?.message || "Failed to fetch addresses.");
+        setAddrError(e.message || "Failed to load addresses.");
         setAddresses([]);
         setSelectedId(null);
       } finally {
@@ -3096,25 +3100,58 @@ export default function Checkout() {
   }, []);
 
   const selectedAddress = useMemo(
-    () => addresses.find((a) => (a?._id || a?.id) === selectedId) || null,
+    () => addresses.find((a) => (a._id || a.id) === selectedId) || null,
     [addresses, selectedId]
   );
 
-  /* --------------------------- CREATE ADDRESS -------------------------- */
+  /* ---------------------- ADD NEW ADDRESS (VALIDATED) ------------------ */
   const handleAddNewAddress = async (e) => {
     e.preventDefault();
-    const required = [
-      "email",
-      "firstName",
-      "lastName",
-      "phoneNumber",
-      "address1",
-      "city",
-      "state",
-      "pincode",
-    ];
-    if (!required.every((k) => String(form[k] || "").trim() !== "")) {
-      alert("Please complete all required fields.");
+
+    // VALIDATION RULES
+    const emailPattern = /^\S+@\S+\.\S+$/;
+    const namePattern = /^[A-Za-z\s]+$/;
+    const phonePattern = /^[0-9]{10}$/;
+    const pincodePattern = /^[0-9]{6}$/;
+    const cityStatePattern = /^[A-Za-z\s]+$/;
+
+    if (!emailPattern.test(form.email)) {
+      alert("Enter a valid email address.");
+      return;
+    }
+
+    if (!namePattern.test(form.firstName)) {
+      alert("First name must contain only letters.");
+      return;
+    }
+
+    if (!namePattern.test(form.lastName)) {
+      alert("Last name must contain only letters.");
+      return;
+    }
+
+    if (!phonePattern.test(form.phoneNumber)) {
+      alert("Phone number must be exactly 10 digits.");
+      return;
+    }
+
+    if (form.address1.trim().length < 5) {
+      alert("Address Line 1 must be at least 5 characters.");
+      return;
+    }
+
+    if (!cityStatePattern.test(form.city)) {
+      alert("City must contain only letters.");
+      return;
+    }
+
+    if (!cityStatePattern.test(form.state)) {
+      alert("State must contain only letters.");
+      return;
+    }
+
+    if (!pincodePattern.test(form.pincode)) {
+      alert("Pincode must be exactly 6 digits.");
       return;
     }
 
@@ -3122,10 +3159,7 @@ export default function Checkout() {
       firstName: form.firstName,
       lastName: form.lastName,
       email: form.email,
-      mobileNumber: `${form.phoneCode}${String(form.phoneNumber).replace(
-        /\s+/g,
-        ""
-      )}`,
+      mobileNumber: `${form.phoneCode}${form.phoneNumber}`,
       state: form.state,
       city: form.city,
       address: [form.address1, form.address2].filter(Boolean).join(", "),
@@ -3134,6 +3168,7 @@ export default function Checkout() {
     };
 
     setSavingNew(true);
+
     try {
       const res = await fetch(`${API_BASE}/api/addresses`, {
         method: "POST",
@@ -3141,62 +3176,40 @@ export default function Checkout() {
         body: JSON.stringify(payload),
       });
 
-      if (res.status === 401 || res.status === 403) {
-        alert("Please log in to save your address.");
-        return;
-      }
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || `Failed to save address (${res.status})`);
-      }
+      if (!res.ok) throw new Error(await res.text());
 
-      // Re-fetch addresses
       const listRes = await fetch(`${API_BASE}/api/addresses`, {
         method: "GET",
         headers: authHeaders(),
       });
 
-      if (listRes.ok) {
-        const data = await listRes.json();
-        const arr =
-          (Array.isArray(data) && data) ||
-          (Array.isArray(data?.addresses) && data.addresses) ||
-          (Array.isArray(data?.data) && data.data) ||
-          (Array.isArray(data?.items) && data.items) ||
-          [];
+      const data = await listRes.json();
+      const arr = data.addresses || data.data || data.items || data || [];
 
-        const current = getAuthUser();
-        let mine = arr;
-        if (current) {
-          const uid = String(
-            current.id || current._id || current.userId || current.sub || ""
-          ).trim();
-          const email = String(current.email || "").toLowerCase().trim();
-          mine = arr.filter((a) => {
-            const aUid = String(
-              a.userId ||
-                a.user_id ||
-                (a.user && (a.user._id || a.user.id)) ||
-                a.createdBy ||
-                ""
-            ).trim();
-            const aEmail = String(a.email || "").toLowerCase().trim();
-            return (
-              (uid && aUid && aUid === uid) ||
-              (email && aEmail && aEmail === email)
-            );
-          });
-        }
+      const current = getAuthUser();
+      let mine = arr;
 
-        setAddresses(mine);
-        const last = mine[mine.length - 1];
-        setSelectedId(last?._id || last?.id || null);
-        setShowForm(false);
-      } else {
-        setShowForm(false);
+      if (current) {
+        const uid = String(current.id || current._id).trim();
+        const email = String(current.email || "").toLowerCase().trim();
+        mine = arr.filter((a) => {
+          const aUid = String(a.userId || "").trim();
+          const aEmail = String(a.email || "").toLowerCase().trim();
+          return aUid === uid || aEmail === email;
+        });
       }
-    } catch (e) {
-      alert(e.message || "Could not save address.");
+
+      setAddresses(mine);
+
+      const last = mine[mine.length - 1];
+      const lastId = last?._id || last?.id;
+      setSelectedId(lastId);
+
+      localStorage.setItem("preferredAddressId", lastId);
+
+      setShowForm(false);
+    } catch (err) {
+      alert(err.message || "Could not save address.");
     } finally {
       setSavingNew(false);
     }
@@ -3212,12 +3225,8 @@ export default function Checkout() {
         headers: authHeaders(),
       });
 
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || "Delete failed");
-      }
+      if (!res.ok) throw new Error(await res.text());
 
-      // Update state and selectedId safely
       setAddresses((prev) => {
         const next = prev.filter((x) => (x._id || x.id) !== id);
         if (selectedId === id) {
@@ -3227,7 +3236,7 @@ export default function Checkout() {
         return next;
       });
     } catch (e) {
-      alert(e.message || "Could not delete address.");
+      alert(e.message || "Delete failed.");
     }
   };
 
@@ -3239,6 +3248,7 @@ export default function Checkout() {
 
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       try {
         setPricingLoading(true);
@@ -3253,53 +3263,52 @@ export default function Checkout() {
           return;
         }
 
-        // GET all products from API (backend supports GET only)
-        const r = await fetch(`${API_BASE}/api/products`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
-        if (!r.ok) {
-          throw new Error(`Products HTTP ${r.status}`);
-        }
-        const allProducts = await r.json(); // should be an array
-
-        // Filter to only products in cart
-        const products = Array.isArray(allProducts)
-          ? allProducts.filter((p) => ids.includes(p._id))
-          : [];
+        // Fetch individually
+        const productResults = await Promise.all(
+          ids.map(async (id) => {
+            const r = await fetch(`${API_BASE}/api/products/${id}`);
+            if (!r.ok) throw new Error(`Product fetch failed: ${id}`);
+            return r.json();
+          })
+        );
 
         const map = {};
         const byId = {};
-        for (const prod of products) {
-          if (!prod || !prod._id) continue;
+
+        productResults.forEach((prod) => {
+          if (!prod || !prod._id) return;
+
           byId[prod._id] = prod;
+
           const pct = clampPct(prod.discountPercentage);
           const variants = Array.isArray(prod.variants) ? prod.variants : [];
-          for (const v of variants) {
+
+          variants.forEach((v) => {
             const base = Number(v.price ?? prod.price ?? prod.mrp ?? 0);
             const final =
               pct > 0
                 ? priceAfterPctWholeRupee(base, pct, "nearest")
                 : Number(prod.discountPrice ?? base);
+
             map[`${prod._id}|${v._id}`] = {
               originalPrice: base,
               discountedPrice: final,
               discountPercentage: pct,
             };
-          }
-        }
+          });
+        });
 
         if (mounted) {
           setPricing(map);
           setProductsById(byId);
         }
       } catch (e) {
-        console.error("Pricing error:", e);
-        if (mounted) setPricingError(e.message || "Pricing error");
+        if (mounted) setPricingError(e.message);
       } finally {
         if (mounted) setPricingLoading(false);
       }
     })();
+
     return () => {
       mounted = false;
     };
@@ -3308,25 +3317,32 @@ export default function Checkout() {
   const getPriceInfo = (item) => {
     if (!item)
       return { originalPrice: 0, discountedPrice: 0, discountPercentage: 0 };
+
     if (item.variantId) {
       const k = `${item.id}|${item.variantId}`;
       if (pricing[k]) return pricing[k];
     }
+
     const prod = productsById[item.id];
     const parsed = parseSelectedWeight(item.selectedWeight);
+
     if (prod && parsed && Array.isArray(prod.variants)) {
       const match = prod.variants.find(
         (v) => norm(v.quantity) === parsed.qty && norm(v.unit) === parsed.unit
       );
+
       if (match) {
         const k2 = `${prod._id}|${match._id}`;
         if (pricing[k2]) return pricing[k2];
+
         const base = Number(match.price ?? prod.price ?? prod.mrp ?? 0);
         const pct = clampPct(prod.discountPercentage);
+
         const final =
           pct > 0
             ? priceAfterPctWholeRupee(base, pct, "nearest")
             : Number(prod.discountPrice ?? base);
+
         return {
           originalPrice: base,
           discountedPrice: final,
@@ -3334,14 +3350,20 @@ export default function Checkout() {
         };
       }
     }
+
     return { originalPrice: 0, discountedPrice: 0, discountPercentage: 0 };
   };
 
   /* ------------------------------- TOTALS ------------------------------ */
+
+  const FREE_SHIPPING_THRESHOLD = 2000;
+  const BASE_SHIPPING_FEE = 0;
+
   const subtotal = useMemo(() => {
     return (cartItems || []).reduce((sum, item) => {
       const q = Number(item.quantity) || 1;
-      return sum + (getPriceInfo(item).originalPrice || 0) * q;
+      const info = getPriceInfo(item);
+      return sum + Number(info.originalPrice || 0) * q;
     }, 0);
   }, [cartItems, pricing]);
 
@@ -3349,67 +3371,77 @@ export default function Checkout() {
     return (cartItems || []).reduce((sum, item) => {
       const q = Number(item.quantity) || 1;
       const info = getPriceInfo(item);
-      return sum + Math.max(0, info.originalPrice - info.discountedPrice) * q;
+      const orig = Number(info.originalPrice || 0);
+      const pct = Number(info.discountPercentage || 0);
+      return sum + (orig * pct) / 100 * q;
     }, 0);
   }, [cartItems, pricing]);
 
-  const FREE_SHIPPING_THRESHOLD = 2000;
-  const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 0;
-  const gst = subtotal * 0;
-  const grandTotal = subtotal - itemsDiscount + shippingFee + gst;
+  const discountedSubtotal = useMemo(() => {
+    return Math.max(0, subtotal - itemsDiscount);
+  }, [subtotal, itemsDiscount]);
+
+  const shippingFee =
+    discountedSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : BASE_SHIPPING_FEE;
+
+  const gst = discountedSubtotal * 0.18;
+
+  const grandTotal = discountedSubtotal + shippingFee + gst;
 
   const itemsCount = (cartItems || []).reduce(
     (n, it) => n + Number(it.quantity || 0),
     0
   );
-  const unlockLeft = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
+
+  const unlockLeft = Math.max(
+    0,
+    FREE_SHIPPING_THRESHOLD - discountedSubtotal
+  );
 
   function cartToApiItems(list = []) {
     return list.map((ci) => {
       const q = Number(ci.quantity) || 1;
-      const info =
-        typeof getPriceInfo === "function"
-          ? getPriceInfo(ci)
-          : { discountedPrice: ci.price || 0 };
+      const info = getPriceInfo(ci);
+
       return {
         productId: ci.id,
         variantId: ci.variantId || null,
         name: ci.name,
         image: ci.image,
         quantity: q,
-        selectedWeight: ci.selectedWeight || null,
-        price: info.discountedPrice || 0,
+        selectedWeight: ci.selectedWeight,
+        price: Number(info.discountedPrice || 0),
       };
     });
   }
 
   /* ------------------------------- PAY NOW ----------------------------- */
   const handlePayNow = async () => {
-    if (!cartItems || cartItems.length === 0) {
-      alert("Your cart is empty. Please add items to proceed.");
+    if (!cartItems?.length) {
+      alert("Your cart is empty.");
       navigate("/best-seller");
       return;
     }
+
     if (!selectedAddress || !selectedAddress._id) {
-      alert("Please select or add a valid address before proceeding to payment.");
+      alert("Select an address before paying.");
       return;
     }
 
     const currentUser = getAuthUser();
-    if (
-      !currentUser ||
-      !(currentUser.id || currentUser._id || currentUser.userId)
-    ) {
-      alert("Please log in before making a payment.");
+    if (!currentUser?.id && !currentUser?._id) {
+      alert("Please log in to continue.");
       return;
     }
 
-    const customerId = currentUser.id || currentUser._id || currentUser.userId;
+    const customerId =
+      currentUser.id || currentUser._id || currentUser.userId;
 
     setIsLoading(true);
+
     try {
       const items = cartToApiItems(cartItems);
-      const amount = grandTotal; // ✅ same as UI
+      const amount = grandTotal;
 
       const res = await fetch(`${API_BASE}/api/payments/initiate`, {
         method: "POST",
@@ -3423,15 +3455,14 @@ export default function Checkout() {
       });
 
       if (!res.ok) {
-        const errorText = await res.text();
-        console.error("Backend payment error:", res.status, errorText);
-        throw new Error(errorText || `HTTP error ${res.status}`);
+        throw new Error(await res.text());
       }
 
       const paymentResponse = await res.json();
       const redirectUrl = paymentResponse?.phonepeResponse?.redirectUrl;
       const orderId =
-        paymentResponse?.phonepeResponse?.merchantTransactionId ||
+        paymentResponse?.phonepeResponse
+          ?.merchantTransactionId ||
         paymentResponse?.phonepeResponse?.orderId;
 
       if (redirectUrl && orderId) {
@@ -3444,19 +3475,19 @@ export default function Checkout() {
             orderId,
           })
         );
-        window.location.href = redirectUrl; // 🔁 Go to PhonePe
+
+        window.location.href = redirectUrl;
       } else {
-        setIsLoading(false);
-        alert("Payment initiation failed. No redirect URL.");
+        alert("Payment initiation failed.");
       }
-    } catch (err) {
-      console.error("Payment initiation error:", err);
+    } catch (e) {
+      alert("Error during payment.");
+    } finally {
       setIsLoading(false);
-      alert("Error initiating payment.");
     }
   };
 
-  /* --------------------------------- UI -------------------------------- */
+  /* ------------------------------- UI --------------------------------- */
   return (
     <Container className="checkout">
       <Row className="gx-4">
@@ -3467,49 +3498,48 @@ export default function Checkout() {
               className={`pill ${
                 unlockLeft > 0 ? "pill-warn" : "pill-success"
               }`}
-              style={{ fontFamily: "poppins" }}
             >
               <span
                 className={`badge ${
-                  unlockLeft > 0 ? "badge-warn" : "badge-success"
+                  unlockLeft > 0
+                    ? "badge-warn"
+                    : "badge-success"
                 }`}
               >
                 {unlockLeft > 0 ? "Almost there" : "Unlocked"}
               </span>
               {unlockLeft > 0 ? (
-                <>
-                  Add ₹{unlockLeft.toLocaleString("en-IN")} more to unlock FREE
-                  delivery
-                </>
+                <>Add ₹{unlockLeft} more to unlock free delivery</>
               ) : (
                 <>FREE delivery unlocked!</>
               )}
             </span>
-            <span style={{ fontFamily: "poppins" }}>
+
+            <span>
               Shipping ₹
-              {(subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 50).toLocaleString(
-                "en-IN"
-              )}{" "}
-              if not unlocked
+              {(subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 50)}
+              {" "}if not unlocked
             </span>
           </div>
 
           {/* Bag */}
           <Card className="bagCard">
             <div className="bagHeader">
-              <h5 style={{ fontFamily: "poppins" }}>
-                Your Bag ({itemsCount})
-              </h5>
-              <div className="subtotal" style={{ fontFamily: "poppins" }}>
+              <h5>Your Bag ({itemsCount})</h5>
+              <div className="subtotal">
                 Subtotal: <b>₹{subtotal.toFixed(2)}</b>
               </div>
             </div>
 
             {pricingLoading && (
-              <div className="px-3 pb-2 text-muted">Updating prices…</div>
+              <div className="px-3 pb-2 text-muted">
+                Updating prices…
+              </div>
             )}
             {pricingError && (
-              <div className="px-3 pb-2 text-danger">{pricingError}</div>
+              <div className="px-3 pb-2 text-danger">
+                {pricingError}
+              </div>
             )}
 
             <div className="bagList">
@@ -3517,32 +3547,39 @@ export default function Checkout() {
                 const q = Number(ci.quantity) || 1;
                 const info = getPriceInfo(ci);
                 const line = Number(info.originalPrice || 0) * q;
+
                 return (
                   <div
-                    key={`${ci.id}-${ci.variantId || ci.selectedWeight || ""}`}
+                    key={`${ci.id}-${ci.variantId || ci.selectedWeight}`}
                     className="bagRow"
                   >
-                    <img src={ci.image} alt={ci.name} className="bagImg" />
+                    <img
+                      src={ci.image}
+                      alt={ci.name}
+                      className="bagImg"
+                    />
+
                     <div className="bagMeta">
                       <div className="bagTitle">{ci.name}</div>
                       <div className="bagSub">Qty {q}</div>
                     </div>
-                    <div className="bagPrice">₹{line.toFixed(2)}</div>
+
+                    <div className="bagPrice">
+                      ₹{line.toFixed(2)}
+                    </div>
                   </div>
                 );
               })}
             </div>
           </Card>
 
-          {/* Delivery Address */}
+          {/* Address */}
           <div className="sectionHeader">
-            <h4 style={{ fontFamily: "poppins" }}>Delivery Address</h4>
+            <h4>Delivery Address</h4>
             <Button
               variant="success"
               size="sm"
-              className="addNew"
               onClick={() => setShowForm((s) => !s)}
-              style={{ fontFamily: "poppins" }}
             >
               {showForm ? "Close" : "+ Add New"}
             </Button>
@@ -3559,11 +3596,13 @@ export default function Checkout() {
                 <div className="text-danger mb-2">{addrError}</div>
               )}
 
-              {addresses.length === 0 && !addrLoading && !showForm && (
-                <div className="text-muted">
-                  No saved addresses yet. Add one to continue.
-                </div>
-              )}
+              {addresses.length === 0 &&
+                !addrLoading &&
+                !showForm && (
+                  <div className="text-muted">
+                    No saved addresses yet. Add one to continue.
+                  </div>
+                )}
 
               {addresses.length > 0 && (
                 <div className="addressList">
@@ -3571,95 +3610,46 @@ export default function Checkout() {
                     const id = a._id || a.id;
                     const isSelected = selectedId === id;
 
-                    const fullName = `${a.firstName || ""} ${
-                      a.lastName || ""
-                    }`.trim();
-                    const addrLine =
-                      a.address ||
-                      `${a.address1 || ""} ${a.address2 || ""}`.trim();
-                    const cityStatePin = `${a.city || ""}, ${
-                      a.state || ""
-                    } - ${a.pincode || ""}`;
-                    const phoneDisplay = a.mobileNumber
-                      ? (() => {
-                          const candidates = [
-                            "+91",
-                            "+1",
-                            "+44",
-                            "+61",
-                            "+81",
-                          ];
-                          const code =
-                            candidates.find((c) =>
-                              a.mobileNumber.startsWith(c)
-                            ) || "+91";
-                          return `${code} ${a.mobileNumber.replace(code, "")}`;
-                        })()
-                      : `${a.phoneCode || "+91"} ${a.phoneNumber || ""}`;
+                    const fullName = `${a.firstName} ${a.lastName}`;
+                    const addrLine = a.address;
 
                     return (
                       <div
-                        className={`addrCard ${isSelected ? "selected" : ""}`}
                         key={id}
+                        className={`addrCard ${
+                          isSelected ? "selected" : ""
+                        }`}
                       >
                         <div className="addrTop">
-                          <div className="left">
-                            <label className="radio">
-                              <input
-                                type="radio"
-                                name="savedAddress"
-                                checked={isSelected}
-                                onChange={() => setSelectedId(id)}
-                              />
-                              <span />
-                            </label>
-                            <div className="addrName">{fullName}</div>
-                            {!isSelected && (
-                              <span
-                                className="deliverTag"
-                                style={{ fontFamily: "poppins" }}
-                              >
-                                Deliver here
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="addrBody">
-                          <div
-                            className="line"
-                            style={{ fontFamily: "poppins" }}
-                          >
-                            {addrLine}
-                          </div>
-                          <div
-                            className="line"
-                            style={{ fontFamily: "poppins" }}
-                          >
-                            {cityStatePin}
-                          </div>
-                          <div
-                            className="line"
-                            style={{ fontFamily: "poppins" }}
-                          >
-                            Phone: {phoneDisplay}
-                          </div>
-                          <div
-                            className="line"
-                            style={{ fontFamily: "poppins" }}
-                          >
-                            {a.email}
-                          </div>
+                          <label className="radio">
+                            <input
+                              type="radio"
+                              checked={isSelected}
+                              onChange={() => {
+                                setSelectedId(id);
+                                localStorage.setItem(
+                                  "preferredAddressId",
+                                  id
+                                );
+                              }}
+                            />
+                            <span />
+                          </label>
+                          <div className="addrName">{fullName}</div>
                         </div>
 
-                        {/* Delete button */}
-                        <div
-                          className="addrActions"
-                          style={{
-                            marginTop: "8px",
-                            display: "flex",
-                            justifyContent: "flex-end",
-                          }}
-                        >
+                        <div className="addrBody">
+                          <div className="line">{addrLine}</div>
+                          <div className="line">
+                            {a.city}, {a.state} - {a.pincode}
+                          </div>
+                          <div className="line">
+                            Phone: {a.mobileNumber}
+                          </div>
+                          <div className="line">{a.email}</div>
+                        </div>
+
+                        <div className="addrActions">
                           <Button
                             variant="outline-danger"
                             size="sm"
@@ -3674,24 +3664,25 @@ export default function Checkout() {
                 </div>
               )}
 
-              {/* Add new address */}
+              {/* Add new */}
               {showForm && (
-                <Form onSubmit={handleAddNewAddress} className="mt-3">
+                <Form onSubmit={handleAddNewAddress}>
                   <Form.Control
                     type="email"
-                    className="mb-2"
-                    placeholder="Email"
                     name="email"
+                    placeholder="Email"
+                    className="mb-2"
                     value={form.email}
                     onChange={handleFormChange}
                     required
                   />
+
                   <Row>
                     <Col md={6}>
                       <Form.Control
-                        className="mb-2"
-                        placeholder="First Name"
                         name="firstName"
+                        placeholder="First Name"
+                        className="mb-2"
                         value={form.firstName}
                         onChange={handleFormChange}
                         required
@@ -3699,9 +3690,9 @@ export default function Checkout() {
                     </Col>
                     <Col md={6}>
                       <Form.Control
-                        className="mb-2"
-                        placeholder="Last Name"
                         name="lastName"
+                        placeholder="Last Name"
+                        className="mb-2"
                         value={form.lastName}
                         onChange={handleFormChange}
                         required
@@ -3712,42 +3703,42 @@ export default function Checkout() {
                   <Row>
                     <Col md={4}>
                       <Form.Select
-                        className="mb-2"
                         name="phoneCode"
                         value={form.phoneCode}
                         onChange={handleFormChange}
+                        className="mb-2"
                       >
-                        <option value="+91">+91 (India)</option>
-                        <option value="+1">+1 (USA)</option>
-                        <option value="+44">+44 (UK)</option>
-                        <option value="+61">+61 (Australia)</option>
-                        <option value="+81">+81 (Japan)</option>
+                        <option value="+91">+91</option>
+                        <option value="+1">+1</option>
                       </Form.Select>
                     </Col>
+
                     <Col md={8}>
                       <Form.Control
-                        className="mb-2"
-                        placeholder="Phone Number"
                         name="phoneNumber"
+                        placeholder="Phone Number"
+                        className="mb-2"
                         value={form.phoneNumber}
                         onChange={handleFormChange}
                         required
+                        maxLength={10}
                       />
                     </Col>
                   </Row>
 
                   <Form.Control
-                    className="mb-2"
-                    placeholder="Address Line 1"
                     name="address1"
+                    placeholder="Address Line 1"
+                    className="mb-2"
                     value={form.address1}
                     onChange={handleFormChange}
                     required
                   />
+
                   <Form.Control
-                    className="mb-2"
-                    placeholder="Address Line 2 (optional)"
                     name="address2"
+                    placeholder="Address Line 2 (optional)"
+                    className="mb-2"
                     value={form.address2}
                     onChange={handleFormChange}
                   />
@@ -3755,9 +3746,9 @@ export default function Checkout() {
                   <Row>
                     <Col md={6}>
                       <Form.Control
-                        className="mb-2"
-                        placeholder="City"
                         name="city"
+                        placeholder="City"
+                        className="mb-2"
                         value={form.city}
                         onChange={handleFormChange}
                         required
@@ -3765,9 +3756,9 @@ export default function Checkout() {
                     </Col>
                     <Col md={6}>
                       <Form.Control
-                        className="mb-2"
-                        placeholder="State"
                         name="state"
+                        placeholder="State"
+                        className="mb-2"
                         value={form.state}
                         onChange={handleFormChange}
                         required
@@ -3778,19 +3769,21 @@ export default function Checkout() {
                   <Row>
                     <Col md={6}>
                       <Form.Control
-                        className="mb-2"
-                        placeholder="Pincode"
                         name="pincode"
+                        placeholder="Pincode"
+                        className="mb-2"
                         value={form.pincode}
                         onChange={handleFormChange}
                         required
+                        maxLength={6}
                       />
                     </Col>
+
                     <Col md={6}>
                       <Form.Control
-                        className="mb-2"
-                        placeholder="Country"
                         name="country"
+                        placeholder="Country"
+                        className="mb-2"
                         value={form.country}
                         onChange={handleFormChange}
                         required
@@ -3802,15 +3795,11 @@ export default function Checkout() {
                     <Button
                       variant="outline-secondary"
                       onClick={() => setShowForm(false)}
-                      disabled={savingNew}
                     >
                       Cancel
                     </Button>
-                    <Button
-                      className="btnPrimary"
-                      type="submit"
-                      disabled={savingNew}
-                    >
+
+                    <Button type="submit" className="btnPrimary">
                       {savingNew ? "Saving…" : "Save Address"}
                     </Button>
                   </div>
@@ -3823,42 +3812,38 @@ export default function Checkout() {
         {/* RIGHT */}
         <Col md={4}>
           <Card className="orderCard sticky">
-            <div className="orderHeader" style={{ fontFamily: "poppins" }}>
-              Order Details
-            </div>
+            <div className="orderHeader">Order Details</div>
 
             <div className="orderRows">
-              <div className="rowLine" style={{ fontFamily: "poppins" }}>
+              <div className="rowLine">
                 <span>Items Subtotal</span>
                 <span>₹ {subtotal.toFixed(2)}</span>
               </div>
 
-              <div className="rowLine" style={{ fontFamily: "poppins" }}>
+              <div className="rowLine">
                 <span>Discount</span>
-                <span>₹ {itemsDiscount.toFixed(2)}</span>
+                <span>- ₹ {itemsDiscount.toFixed(2)}</span>
               </div>
 
-              <div className="rowLine" style={{ fontFamily: "poppins" }}>
+              <div className="rowLine">
+                <span>Subtotal after discount</span>
+                <span>₹ {discountedSubtotal.toFixed(2)}</span>
+              </div>
+
+              <div className="rowLine">
                 <span>Shipping</span>
-                <span>
-                  ₹{" "}
-                  {(subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 50).toLocaleString(
-                    "en-IN"
-                  )}
-                </span>
+                <span>₹ {shippingFee}</span>
               </div>
 
-              <div className="rowLine" style={{ fontFamily: "poppins" }}>
+              <div className="rowLine">
                 <span>GST (18%)</span>
-                <span>₹ {(subtotal * 0.18).toFixed(2)}</span>
+                <span>₹ {gst.toFixed(2)}</span>
               </div>
             </div>
 
             <div className="totalRow">
-              <span style={{ fontFamily: "poppins" }}>Total</span>
-              <span style={{ fontFamily: "poppins" }}>
-                ₹ {grandTotal.toLocaleString("en-IN")}
-              </span>
+              <span>Total</span>
+              <span>₹ {grandTotal.toFixed(2)}</span>
             </div>
 
             <Button
@@ -3868,10 +3853,10 @@ export default function Checkout() {
             >
               {isLoading
                 ? "Processing…"
-                : `Pay ₹${grandTotal.toLocaleString("en-IN")}`}
+                : `Pay ₹${grandTotal.toFixed(2)}`}
             </Button>
 
-            <div className="orderNote" style={{ fontFamily: "poppins" }}>
+            <div className="orderNote">
               Secure payments • Easy returns • Fast support
             </div>
           </Card>
