@@ -2,7 +2,7 @@ import { Container, Button } from "react-bootstrap";
 import Form from "react-bootstrap/Form";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import BannaleafRd from "/media/BannaleafRd.png";
 import Rectangle from "/media/Rectangle.png";
 import plate from "/media/Layer_20.png";
@@ -16,6 +16,8 @@ export default function Create_Account() {
   const [isVisible, setIsVisible] = useState(false);
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+
 
   useEffect(() => {
     const t = setTimeout(() => setIsVisible(true), 100);
@@ -37,44 +39,102 @@ export default function Create_Account() {
 
   const brand = "#00614A";
 
+  // --------------------------------
+  // SINGLE FIELD VALIDATION
+  // --------------------------------
+  const validateField = (name, value) => {
+    switch (name) {
+      case "firstName": {
+        const v = value.trim();
+        if (!/^[A-Za-z]{2,}$/.test(v)) {
+          return "First name should contain only letters and be at least 2 characters.";
+        }
+        return "";
+      }
+      case "lastName": {
+        const v = value.trim();
+        if (!/^[A-Za-z]{1,}$/.test(v)) {
+          return "Last name should contain only letters and be at least 1 character.";
+        }
+        return "";
+      }
+      case "email": {
+        const v = value.trim();
+        if (!/^\S+@\S+\.\S+$/.test(v)) {
+          return "Enter a valid email address.";
+        }
+        return "";
+      }
+      case "mobileNumber": {
+        if (!/^\d{10}$/.test(value)) {
+          return "Mobile number must be exactly 10 digits and only numbers allowed.";
+        }
+        return "";
+      }
+      case "password": {
+        if (value.length < 6) {
+          return "Password must be at least 6 characters.";
+        }
+        return "";
+      }
+      default:
+        return "";
+    }
+  };
+
+  // ----------------------------
+  // HANDLE CHANGE (sanitized + live validation)
+  // ----------------------------
   const handleChange = (e) => {
-    const { name, type, checked, value } = e.target;
-    setFormData((s) => ({ ...s, [name]: type === "checkbox" ? checked : value }));
+    const { name, value, type, checked } = e.target;
+    let newValue = type === "checkbox" ? checked : value;
+
+    // First & Last Name: letters + space only
+    if (name === "firstName" || name === "lastName") {
+      newValue = newValue.replace(/[^A-Za-z ]/g, "");
+    }
+
+    // Mobile Number: digits only, max 10
+    if (name === "mobileNumber") {
+      newValue = newValue.replace(/\D/g, "").slice(0, 10);
+    }
+
+    // Email: no spaces
+    if (name === "email") {
+      newValue = newValue.replace(/\s/g, "");
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: newValue,
+    }));
+
+    // validate this field immediately
+    if (["firstName", "lastName", "email", "mobileNumber", "password"].includes(name)) {
+      const errorMsg = validateField(name, newValue);
+      setErrors((prev) => ({
+        ...prev,
+        [name]: errorMsg,
+      }));
+    }
   };
 
   // ---------------------------------------------------
-  // VALIDATION LOGIC
+  // FULL FORM VALIDATION ON SUBMIT
   // ---------------------------------------------------
   const validateForm = () => {
     const newErrors = {};
 
-    // First Name
-    if (!/^[A-Za-z]{2,}$/.test(formData.firstName)) {
-      newErrors.firstName =
-        "First name should contain only letters and be at least 2 characters.";
-    }
+    newErrors.firstName = validateField("firstName", formData.firstName);
+    newErrors.lastName = validateField("lastName", formData.lastName);
+    newErrors.email = validateField("email", formData.email);
+    newErrors.mobileNumber = validateField("mobileNumber", formData.mobileNumber);
+    newErrors.password = validateField("password", formData.password);
 
-    // Last Name
-    if (!/^[A-Za-z]{1,}$/.test(formData.lastName)) {
-      newErrors.lastName =
-        "Last name should contain only letters and be at least 1 characters.";
-    }
-
-    // Email
-    if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Enter a valid email address.";
-    }
-
-    // Mobile number (only digits & exactly 10)
-    if (!/^\d{10}$/.test(formData.mobileNumber)) {
-      newErrors.mobileNumber =
-        "Mobile number must be exactly 10 digits and only numbers allowed.";
-    }
-
-    // Password
-    if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters.";
-    }
+    // remove empty errors
+    Object.keys(newErrors).forEach((key) => {
+      if (!newErrors[key]) delete newErrors[key];
+    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -136,7 +196,9 @@ export default function Create_Account() {
             <img src={plate} alt="Plate" style={{ width: "25%" }} />
           </div>
 
-          <div style={{ position: "absolute", top: "70%", right: "-42%", pointerEvents: "none", zIndex: 1 }}>
+          <div
+            style={{ position: "absolute", top: "70%", right: "-42%", pointerEvents: "none", zIndex: 1 }}
+          >
             <img src={BannaleafRU} alt="Banana Leaf" style={{ width: "25%" }} />
           </div>
 
@@ -169,9 +231,7 @@ export default function Create_Account() {
                 Create Account
               </h2>
 
-              {/* ---------------------------------------------------
-                    FORM START
-              --------------------------------------------------- */}
+              {/* FORM START */}
               <Form onSubmit={handleSubmit}>
                 {/* FIRST NAME */}
                 <Form.Group className="mb-4">
@@ -242,6 +302,7 @@ export default function Create_Account() {
                     value={formData.mobileNumber}
                     onChange={handleChange}
                     maxLength={10}
+                    inputMode="numeric"
                     style={{
                       height: 40,
                       border: `1.5px solid ${errors.mobileNumber ? "red" : brand}`,
@@ -254,24 +315,44 @@ export default function Create_Account() {
                 </Form.Group>
 
                 {/* PASSWORD */}
-                <Form.Group className="mb-4">
-                  <Form.Control
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    style={{
-                      height: 40,
-                      border: `1.5px solid ${errors.password ? "red" : brand}`,
-                      fontSize: 18,
-                    }}
-                    required
-                  />
-                  {errors.password && (
-                    <small style={{ color: "red" }}>{errors.password}</small>
-                  )}
-                </Form.Group>
+               <Form.Group className="mb-4" style={{ position: "relative" }}>
+  <Form.Control
+    type={showPassword ? "text" : "password"}  // 🔥 dynamic
+    name="password"
+    placeholder="Password"
+    value={formData.password}
+    onChange={handleChange}
+    style={{
+      height: 40,
+      border: `1.5px solid ${errors.password ? "red" : brand}`,
+      fontSize: 18,
+      paddingRight: "45px", // space for the eye icon
+    }}
+    required
+  />
+
+  {/* Error */}
+  {errors.password && (
+    <small style={{ color: "red" }}>{errors.password}</small>
+  )}
+
+  {/* Show/Hide eye icon */}
+  <span
+    onClick={() => setShowPassword(!showPassword)}
+    style={{
+      position: "absolute",
+      right: "12px",
+      top: "50%",
+      transform: "translateY(-50%)",
+      cursor: "pointer",
+      fontSize: "20px",
+      color: brand,
+    }}
+  >
+      {showPassword ? <FaEyeSlash /> : <FaEye />}
+  </span>
+</Form.Group>
+
 
                 {/* SUBMIT BUTTON */}
                 <Button

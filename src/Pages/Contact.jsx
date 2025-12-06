@@ -1,9 +1,7 @@
 import Navbar_Menu from "../Component/Navbar_Menu";
 import { Container, Row, Col } from "react-bootstrap";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faLocationDot } from "@fortawesome/free-solid-svg-icons";
-import { faPhone } from "@fortawesome/free-solid-svg-icons";
-import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
+import { faLocationDot, faPhone, faEnvelope } from "@fortawesome/free-solid-svg-icons";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -19,6 +17,7 @@ import ScrollToTop from "../Component/ScrollToTop";
 const schema = yup.object().shape({
   firstName: yup
     .string()
+    .trim()
     .matches(/^[A-Za-z\s]+$/, "First name must contain only letters")
     .min(2, "First name must be at least 2 characters")
     .max(30, "First name is too long")
@@ -26,6 +25,7 @@ const schema = yup.object().shape({
 
   lastName: yup
     .string()
+    .trim()
     .matches(/^[A-Za-z\s]+$/, "Last name must contain only letters")
     .min(2, "Last name must be at least 2 characters")
     .max(30, "Last name is too long")
@@ -33,12 +33,13 @@ const schema = yup.object().shape({
 
   email: yup
     .string()
+    .trim()
     .email("Please enter a valid email address")
     .required("Email is required"),
 
   phoneCode: yup
     .string()
-    .matches(/^\+\d{1,4}$/, "Phone code must look like +91")
+    .oneOf(["+91", "+1", "+44", "+61"], "Please select a valid phone code")
     .required("Phone code is required"),
 
   phoneNumber: yup
@@ -48,14 +49,21 @@ const schema = yup.object().shape({
 
   message: yup
     .string()
+    .trim()
     .min(10, "Message must be at least 10 characters long")
     .max(500, "Message cannot exceed 500 characters")
     .required("Message is required"),
 });
 
-
 export default function Contact() {
   const [isVisible, setIsVisible] = useState(false);
+
+  const phoneCodes = [
+    { label: "India (+91)", value: "+91" },
+    { label: "USA (+1)", value: "+1" },
+    { label: "UK (+44)", value: "+44" },
+    { label: "Australia (+61)", value: "+61" },
+  ];
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -68,16 +76,23 @@ export default function Contact() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
   const {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm({
     resolver: yupResolver(schema),
+    mode: "onChange",         // 🔥 validate while typing
+    reValidateMode: "onChange",
   });
 
   const onSubmit = (data) => {
     console.log("Form Submitted", data);
+    // TODO: add API call here
+    alert("Form submitted successfully. Our team will contact you within 24 hours.");
+    reset(); // clear form on success
   };
 
   return (
@@ -175,6 +190,7 @@ export default function Contact() {
               }}
             />
           </div>
+
           <div className="mt-5" style={{ fontFamily: "oswald, sans-serif" }}>
             <h1
               style={{
@@ -182,14 +198,14 @@ export default function Contact() {
                 textAlign: "center",
                 fontSize: "45px",
                 letterSpacing: "1px",
-                fontFamily:'oswald, sans-serif'
+                fontFamily: "oswald, sans-serif",
               }}
               className="mobile-font"
             >
               CONTACT US
             </h1>
           </div>
-          
+
           <Container
             className="mt-5"
             style={{ fontFamily: "oswald, sans-serif" }}
@@ -284,6 +300,7 @@ export default function Contact() {
               </Col>
             </Row>
           </Container>
+
           {/* CONTACT FORM */}
           <Container
             style={{ margin: "5% auto", fontFamily: "oswald, sans-serif" }}
@@ -301,19 +318,20 @@ export default function Contact() {
                   <Form
                     onSubmit={handleSubmit(onSubmit)}
                     style={{ padding: "10px" }}
+                    noValidate   // ✅ disable browser default validation UI
                   >
                     {/* First Name */}
                     <Form.Group className="mb-3">
-                    <Form.Control
-  type="text"
-  placeholder="First Name"
-  {...register("firstName")}
-  isInvalid={!!errors.firstName}
-  maxLength={30}
-  style={{ height: "75px", fontSize: "20px" }}
-  className="input-account-forms search-input"
-/>
-
+                      <Form.Control
+                        type="text"
+                        placeholder="First Name"
+                        {...register("firstName")}
+                        isInvalid={!!errors.firstName}
+                        required
+                        maxLength={30}
+                        style={{ height: "75px", fontSize: "20px" }}
+                        className="input-account-forms search-input"
+                      />
                       <Form.Control.Feedback type="invalid">
                         {errors.firstName?.message}
                       </Form.Control.Feedback>
@@ -322,15 +340,15 @@ export default function Contact() {
                     {/* Last Name */}
                     <Form.Group className="mb-3">
                       <Form.Control
-  type="text"
-  placeholder="Last Name"
-  {...register("lastName")}
-  isInvalid={!!errors.lastName}
-  maxLength={30}
-  style={{ height: "75px", fontSize: "20px" }}
-  className="input-account-forms search-input"
-/>
-
+                        type="text"
+                        placeholder="Last Name"
+                        {...register("lastName")}
+                        isInvalid={!!errors.lastName}
+                        required
+                        maxLength={30}
+                        style={{ height: "75px", fontSize: "20px" }}
+                        className="input-account-forms search-input"
+                      />
                       <Form.Control.Feedback type="invalid">
                         {errors.lastName?.message}
                       </Form.Control.Feedback>
@@ -338,17 +356,17 @@ export default function Contact() {
 
                     {/* Email */}
                     <Form.Group className="mb-3">
-                     <Form.Control
-  type="email"
-  placeholder="Email"
-  {...register("email")}
-  isInvalid={!!errors.email}
-  inputMode="email"
-  autoComplete="email"
-  style={{ height: "75px", fontSize: "20px" }}
-  className="input-account-forms search-input"
-/>
-
+                      <Form.Control
+                        type="email"
+                        placeholder="Email"
+                        {...register("email")}
+                        isInvalid={!!errors.email}
+                        required
+                        inputMode="email"
+                        autoComplete="email"
+                        style={{ height: "75px", fontSize: "20px" }}
+                        className="input-account-forms search-input"
+                      />
                       <Form.Control.Feedback type="invalid">
                         {errors.email?.message}
                       </Form.Control.Feedback>
@@ -358,34 +376,40 @@ export default function Contact() {
                     <Row>
                       <Col md={4}>
                         <Form.Group className="mb-3">
-                         <Form.Control
-  type="text"
-  placeholder="+91"
-  {...register("phoneCode")}
-  isInvalid={!!errors.phoneCode}
-  maxLength={4}
-  style={{ height: "75px", fontSize: "20px" }}
-  className="input-account-forms search-input"
-/>
-
+                          <Form.Select
+                            aria-label="Phone Code"
+                            {...register("phoneCode")}
+                            isInvalid={!!errors.phoneCode}
+                            required
+                            style={{ height: "75px", fontSize: "20px" }}
+                            className="input-account-forms search-input"
+                          >
+                            <option value="">Phone Code</option>
+                            {phoneCodes.map((code) => (
+                              <option key={code.value} value={code.value}>
+                                {code.label}
+                              </option>
+                            ))}
+                          </Form.Select>
                           <Form.Control.Feedback type="invalid">
                             {errors.phoneCode?.message}
                           </Form.Control.Feedback>
                         </Form.Group>
                       </Col>
+
                       <Col md={8}>
                         <Form.Group className="mb-3">
-                         <Form.Control
-  type="text"
-  placeholder="Phone Number"
-  {...register("phoneNumber")}
-  isInvalid={!!errors.phoneNumber}
-  maxLength={10}
-  inputMode="numeric"
-  style={{ height: "75px", fontSize: "20px" }}
-  className="input-account-forms search-input"
-/>
-
+                          <Form.Control
+                            type="text"
+                            placeholder="Phone Number"
+                            {...register("phoneNumber")}
+                            isInvalid={!!errors.phoneNumber}
+                            required
+                            maxLength={10}
+                            inputMode="numeric"
+                            style={{ height: "75px", fontSize: "20px" }}
+                            className="input-account-forms search-input"
+                          />
                           <Form.Control.Feedback type="invalid">
                             {errors.phoneNumber?.message}
                           </Form.Control.Feedback>
@@ -395,17 +419,17 @@ export default function Contact() {
 
                     {/* Message */}
                     <Form.Group className="mb-3">
-                     <Form.Control
-  as="textarea"
-  rows={3}
-  placeholder="Send Message"
-  {...register("message")}
-  isInvalid={!!errors.message}
-  maxLength={500}
-  style={{ height: "200px", fontSize: "20px" }}
-  className="input-account-forms search-input"
-/>
-
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        placeholder="Send Message"
+                        {...register("message")}
+                        isInvalid={!!errors.message}
+                        required
+                        maxLength={500}
+                        style={{ height: "200px", fontSize: "20px" }}
+                        className="input-account-forms search-input"
+                      />
                       <Form.Control.Feedback type="invalid">
                         {errors.message?.message}
                       </Form.Control.Feedback>

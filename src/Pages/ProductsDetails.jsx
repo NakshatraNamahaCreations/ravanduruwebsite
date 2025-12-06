@@ -1081,29 +1081,51 @@ setPrice(imgs[0]?.price ?? formatted.discountedPrice);
   if (!product) return;
 
   const variant = selectedVariant || product.variants?.[0] || {};
-  const weightLabel = [
-    (variant.quantity ?? "").toString(),
-    variant.unit ?? ""
-  ].join(""); // e.g. "33kg"
 
-  // Build the item the way your cartSlice expects it
+  // normalize weight/unit separately (so backend/admin can use them)
+  const selectedWeight = variant.quantity != null ? String(variant.quantity) : ""; // "200"
+  const selectedUnit = variant.unit ?? ""; // "g" or "gm" or ""
+
+  // numeric packSize (schema expects Number)
+  const parsedPackSize = (() => {
+    const n = Number(selectedWeight);
+    return Number.isFinite(n) ? n : undefined;
+  })();
+
+  // legacy combined label for backwards compatibility (e.g. "200gm")
+  const weightLabel = (selectedWeight || "") + (selectedUnit || "");
+
+  // Build the item the way cartSlice (robust version) expects it
   const item = {
-    id: product.id,                
+    id: product.id,
     name: product.name,
-    image: mainImage || product.images?.[0]?.src || productPlaceholder,
+    image: mainImage || product.images?.[0]?.src || null,
     price: price || product.discountedPrice || product.originalPrice || 0,
     originalPrice: product.originalPrice ?? 0,
     discountedPrice: product.discountedPrice ?? 0,
-    variantId: variant._id,         
-    weight: weightLabel,            
-    quantity,
+    variantId: variant._id ?? null,
+
+    // normalized fields (important)
+    selectedWeight: selectedWeight || null,   // "200"
+    selectedUnit: selectedUnit || null,       // "gm"
+
+    // legacy combined field (optional, kept for compatibility)
+    weight: weightLabel || null,              // "200gm"
+
+    // fields that match Order model
+    packSize: parsedPackSize ?? null,         // numeric e.g. 200
+    packUnit: selectedUnit || null,           // e.g. "g"
+    unit: selectedUnit || null,               // also populate legacy `unit` for admin display
+
+    // buyer's chosen pack count (number of packets)
+    quantity: Number(quantity) > 0 ? Number(quantity) : 1,
   };
-
-
 
   dispatch(addToCart(item));
   navigate("/your-cart");
 };
+
+
 
 const handleAddToWishlist = async () => {
     const user = JSON.parse(localStorage.getItem("user"));

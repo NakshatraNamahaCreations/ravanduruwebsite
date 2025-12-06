@@ -1,3 +1,4 @@
+// OrderDetails.jsx
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Container,
@@ -36,6 +37,25 @@ const priceAfterPctWholeRupee = (base, pct, mode = "nearest") => {
   return Math.max(0, b - off);
 };
 
+// If backend only gives discounted price and a discount %, recover a plausible original MRP
+// by searching for the smallest whole-rupee original price such that:
+// priceAfterPctWholeRupee(original, pct) === discounted
+const recoverOriginalFromDiscounted = (discounted, pct, searchLimit = 5000) => {
+  discounted = Math.round(Number(discounted) || 0);
+  pct = clampPct(pct || 0);
+  if (pct <= 0) return discounted;
+  // search starting at discounted and upwards
+  const maxTry = discounted + searchLimit;
+  for (let cand = discounted; cand <= maxTry; cand++) {
+    if (priceAfterPctWholeRupee(cand, pct, "nearest") === discounted) {
+      return cand;
+    }
+  }
+  // fallback: approximate original by reversing percentage (may not match rounding)
+  const approx = Math.round((discounted * 100) / (100 - pct));
+  return approx || discounted;
+};
+
 const renderAddress = (addr) => {
   if (!addr) return "Address not available";
   const parts = [
@@ -50,6 +70,7 @@ const renderAddress = (addr) => {
   return parts.join("\n");
 };
 
+// Normalize order items & pricing similar to Checkout
 // Normalize order items & pricing similar to Checkout
 const normalizeOrderItems = (order) => {
   const rawItems = Array.isArray(order.items)
@@ -66,31 +87,43 @@ const normalizeOrderItems = (order) => {
   const orderDiscountPct = clampPct(order.discountPercentage ?? 0);
 
   return rawItems.map((it) => {
-    // ORIGINAL PRICE (MRP) – same logic style as Checkout
-    const originalPrice = toNum(
+    // Discount percentage per item, fallback to order-level
+    const discountPercentage = clampPct(
+      it.discountPercentage ?? orderDiscountPct
+    );
+
+    // ---- IMPORTANT CHANGE ----
+    // Treat `it.price` as the *discounted* price coming from backend.
+    // Other fields (originalPrice, mrp, etc.) are treated as true MRP.
+    let discountedPrice = toNum(
+      it.discountedPrice ??
+        it.salePrice ??
+        it.offerPrice ??
+        it.price ?? // price is considered FINAL (after discount)
+        0
+    );
+
+    let originalPrice = toNum(
       it.originalPrice ??
         it.mrp ??
         it.mrpPrice ??
         it.basePrice ??
         it.unitPrice ??
         it.productPrice ??
-        it.price ??
-        0
+        0 // <- notice: we DO NOT fall back to it.price here
     );
 
-    // Discount percentage per item, fallback to order-level
-    const discountPercentage = clampPct(
-      it.discountPercentage ?? orderDiscountPct
-    );
+    // If we only have discounted price + % OFF, recover original MRP
+    if (!originalPrice && discountedPrice && discountPercentage > 0) {
+      const recovered = recoverOriginalFromDiscounted(
+        discountedPrice,
+        discountPercentage,
+        5000
+      );
+      originalPrice = toNum(recovered);
+    }
 
-    // DISCOUNTED PRICE:
-    // 1. If backend gave discounted/offer price, use it.
-    // 2. Else compute from percentage like Checkout (whole rupee).
-    // 3. Else same as original (no discount).
-    let discountedPrice = toNum(
-      it.discountedPrice ?? it.salePrice ?? it.offerPrice ?? 0
-    );
-
+    // If we have original but no discounted, compute the discounted price
     if (!discountedPrice && originalPrice) {
       if (discountPercentage > 0) {
         discountedPrice = priceAfterPctWholeRupee(
@@ -103,16 +136,25 @@ const normalizeOrderItems = (order) => {
       }
     }
 
+    // If still only one value present (and no discount%), treat them equal
+    if (!originalPrice && discountedPrice && discountPercentage === 0) {
+      originalPrice = discountedPrice;
+    }
+    if (!discountedPrice && originalPrice && discountPercentage === 0) {
+      discountedPrice = originalPrice;
+    }
+
     return {
       productName: it.productName || it.name || "Product",
       productImage: it.productImage || it.image || "/media/products.png",
-      originalPrice,
-      discountedPrice,
-      discountPercentage,
+      originalPrice,      // e.g. 230.00 (per unit)
+      discountedPrice,    // e.g. 221.00 (per unit)
+      discountPercentage, // e.g. 4
       quantity: toNum(it.quantity ?? 1),
     };
   });
 };
+
 
 // ---------- identity helpers ----------
 const normalizeEmail = (s) => (s || "").trim().toLowerCase();
@@ -298,27 +340,55 @@ export default function OrderDetails() {
                 // PRICING (mirrors Checkout logic)
                 // ----------------------------
 
-                // Items subtotal (MRP)
+                // 1) Items subtotal (MRP – original price)
                 const originalSubtotal = items.reduce(
-                  (sum, p) =>
-                    sum + toNum(p.originalPrice) * toNum(p.quantity),
+                  (sum, p) => sum + toNum(p.originalPrice) * toNum(p.quantity),
                   0
                 );
 
-                // Discount = sum(originalPrice * discountPercentage/100 * qty)
+                // 2) Discount from original vs discounted price
                 const itemsDiscount = items.reduce((sum, p) => {
                   const orig = toNum(p.originalPrice);
-                  const pct = clampPct(p.discountPercentage);
+                  const disc = toNum(p.discountedPrice);
                   const qty = toNum(p.quantity);
-                  return sum + (orig * pct) / 100 * qty;
+                  return sum + (orig - disc) * qty;
                 }, 0);
 
-                const fixedDiscountedSubtotal = Math.max(
-                  0,
-                  originalSubtotal - itemsDiscount
+                let discount = Math.round(itemsDiscount * 100) / 100;
+
+                // Order-level discount from backend (percentage or amount)
+                const orderLevelDiscountPct = clampPct(
+                  order.discountPercentage ?? 0
+                );
+                const orderLevelDiscountAmount = toNum(
+                  order.discountAmount ??
+                    order.couponDiscount ??
+                    order.offerDiscount ??
+                    0
                 );
 
-                // Shipping: same pattern as Checkout
+                // If per-item discount is 0 but backend has discount info, use backend data
+                if (discount <= 0) {
+                  if (orderLevelDiscountAmount > 0) {
+                    discount =
+                      Math.round(orderLevelDiscountAmount * 100) / 100;
+                  } else if (
+                    orderLevelDiscountPct > 0 &&
+                    originalSubtotal > 0
+                  ) {
+                    const rawDisc =
+                      (originalSubtotal * orderLevelDiscountPct) / 100;
+                    discount = Math.round(rawDisc * 100) / 100;
+                  }
+                }
+
+                // Subtotal after discount
+                const fixedDiscountedSubtotal = Math.max(
+                  0,
+                  originalSubtotal - discount
+                );
+
+                // Shipping
                 const shipping =
                   order.shippingFee != null
                     ? toNum(order.shippingFee)
@@ -329,16 +399,21 @@ export default function OrderDetails() {
                 // GST on discounted subtotal
                 const tax = fixedDiscountedSubtotal * GST_RATE;
 
-                // Final total: prefer backend amount, else recompute like Checkout
+                // Final total: prefer backend amount, else recompute
                 const computedTotal =
                   fixedDiscountedSubtotal + shipping + tax;
                 const total =
-                  order.amount != null
-                    ? toNum(order.amount)
-                    : computedTotal;
+                  order.amount != null ? toNum(order.amount) : computedTotal;
 
-                const addr =
-                  order.address || order.shippingAddress || {};
+                // For display: discount percentage (prefer backend)
+                let displayDiscountPct = orderLevelDiscountPct;
+                if (!displayDiscountPct && originalSubtotal > 0 && discount > 0) {
+                  displayDiscountPct = Math.round(
+                    (discount / originalSubtotal) * 100
+                  );
+                }
+
+                const addr = order.address || order.shippingAddress || {};
 
                 return (
                   <div
@@ -366,9 +441,7 @@ export default function OrderDetails() {
                     <div className="p-3 mt-4 order-box">
                       {/* Header: title + PDF download */}
                       <div className="d-flex justify-content-between align-items-center">
-                        <h5 className="invoice-title m-0">
-                          ORDER INVOICE
-                        </h5>
+                        <h5 className="invoice-title m-0">ORDER INVOICE</h5>
 
                         <DownloadPDF
                           order={order}
@@ -414,7 +487,7 @@ export default function OrderDetails() {
                                   letterSpacing: "1px",
                                 }}
                               >
-                                Price
+                                Price (MRP)
                               </th>
                             </tr>
                           </thead>
@@ -431,9 +504,9 @@ export default function OrderDetails() {
                               </tr>
                             ) : (
                               items.map((item, i) => {
-                                const line =
-                                  toNum(item.discountedPrice) *
-                                  toNum(item.quantity);
+                                const qty = toNum(item.quantity);
+                                const unitOriginal = toNum(item.originalPrice);
+
                                 return (
                                   <tr
                                     key={i}
@@ -467,10 +540,7 @@ export default function OrderDetails() {
                                             objectFit: "contain",
                                           }}
                                           onError={(e) => {
-                                            if (
-                                              !e.currentTarget.dataset
-                                                .fallback
-                                            ) {
+                                            if (!e.currentTarget.dataset.fallback) {
                                               e.currentTarget.dataset.fallback =
                                                 "1";
                                               e.currentTarget.src =
@@ -498,7 +568,7 @@ export default function OrderDetails() {
                                         fontSize: 18,
                                       }}
                                     >
-                                      {item.quantity}
+                                      {qty}
                                     </td>
                                     <td
                                       style={{
@@ -506,7 +576,8 @@ export default function OrderDetails() {
                                         fontSize: 18,
                                       }}
                                     >
-                                      <strong>{INR(line)}</strong>
+                                      {/* show original price (MRP) – e.g. 460 */}
+                                      <strong>{INR(unitOriginal)}</strong>
                                     </td>
                                   </tr>
                                 );
@@ -536,9 +607,10 @@ export default function OrderDetails() {
                       <div className="mt-5 d-flex justify-content-end">
                         <table
                           className="table table-borderless w-auto text-end"
-                          style={{ width: 300, color: "#00614A" }}
+                          style={{ width: 320, color: "#00614A" }}
                         >
                           <tbody>
+                            {/* 1. ORIGINAL AMOUNT (MRP) */}
                             <tr>
                               <td
                                 style={{
@@ -547,7 +619,7 @@ export default function OrderDetails() {
                                   fontSize: 18,
                                 }}
                               >
-                                ITEMS SUBTOTAL (MRP)
+                                ORIGINAL AMOUNT (MRP)
                               </td>
                               <td
                                 style={{
@@ -556,12 +628,11 @@ export default function OrderDetails() {
                                   fontSize: 18,
                                 }}
                               >
-                                <strong>
-                                  {INR(originalSubtotal)}
-                                </strong>
+                                <strong>{INR(originalSubtotal)}</strong>
                               </td>
                             </tr>
 
+                            {/* 2. DISCOUNT PERCENTAGE (from backend if present) */}
                             <tr>
                               <td
                                 style={{
@@ -570,7 +641,7 @@ export default function OrderDetails() {
                                   fontSize: 18,
                                 }}
                               >
-                                DISCOUNT
+                                DISCOUNT (%)
                               </td>
                               <td
                                 style={{
@@ -578,12 +649,13 @@ export default function OrderDetails() {
                                   fontSize: 18,
                                 }}
                               >
-                                <strong>
-                                  - {INR(itemsDiscount)}
-                                </strong>
+                                {displayDiscountPct
+                                  ? `${displayDiscountPct}%`
+                                  : "0%"}
                               </td>
                             </tr>
 
+                            {/* 3. DISCOUNT AMOUNT (₹) */}
                             <tr>
                               <td
                                 style={{
@@ -592,7 +664,7 @@ export default function OrderDetails() {
                                   fontSize: 18,
                                 }}
                               >
-                                SUBTOTAL AFTER DISCOUNT
+                                DISCOUNT AMOUNT
                               </td>
                               <td
                                 style={{
@@ -600,12 +672,32 @@ export default function OrderDetails() {
                                   fontSize: 18,
                                 }}
                               >
-                                <strong>
-                                  {INR(fixedDiscountedSubtotal)}
-                                </strong>
+                                <strong>- {INR(discount)}</strong>
                               </td>
                             </tr>
 
+                            {/* 4. AMOUNT AFTER DISCOUNT */}
+                            <tr>
+                              <td
+                                style={{
+                                  fontWeight: 600,
+                                  letterSpacing: ".5px",
+                                  fontSize: 18,
+                                }}
+                              >
+                                AMOUNT AFTER DISCOUNT
+                              </td>
+                              <td
+                                style={{
+                                  fontWeight: 700,
+                                  fontSize: 18,
+                                }}
+                              >
+                                <strong>{INR(fixedDiscountedSubtotal)}</strong>
+                              </td>
+                            </tr>
+
+                            {/* 5. SHIPPING */}
                             <tr>
                               <td
                                 style={{
@@ -625,6 +717,7 @@ export default function OrderDetails() {
                               </td>
                             </tr>
 
+                            {/* 6. GST */}
                             <tr>
                               <td
                                 style={{
@@ -650,6 +743,7 @@ export default function OrderDetails() {
                               </td>
                             </tr>
 
+                            {/* 7. FINAL AMOUNT PAID */}
                             <tr>
                               <td
                                 style={{
