@@ -37,21 +37,18 @@ const priceAfterPctWholeRupee = (base, pct, mode = "nearest") => {
   return Math.max(0, b - off);
 };
 
-// If backend only gives discounted price and a discount %, recover a plausible original MRP
-// by searching for the smallest whole-rupee original price such that:
-// priceAfterPctWholeRupee(original, pct) === discounted
 const recoverOriginalFromDiscounted = (discounted, pct, searchLimit = 5000) => {
   discounted = Math.round(Number(discounted) || 0);
   pct = clampPct(pct || 0);
   if (pct <= 0) return discounted;
-  // search starting at discounted and upwards
+
   const maxTry = discounted + searchLimit;
   for (let cand = discounted; cand <= maxTry; cand++) {
     if (priceAfterPctWholeRupee(cand, pct, "nearest") === discounted) {
       return cand;
     }
   }
-  // fallback: approximate original by reversing percentage (may not match rounding)
+
   const approx = Math.round((discounted * 100) / (100 - pct));
   return approx || discounted;
 };
@@ -70,8 +67,6 @@ const renderAddress = (addr) => {
   return parts.join("\n");
 };
 
-// Normalize order items & pricing similar to Checkout
-// Normalize order items & pricing similar to Checkout
 const normalizeOrderItems = (order) => {
   const rawItems = Array.isArray(order.items)
     ? order.items
@@ -87,19 +82,15 @@ const normalizeOrderItems = (order) => {
   const orderDiscountPct = clampPct(order.discountPercentage ?? 0);
 
   return rawItems.map((it) => {
-    // Discount percentage per item, fallback to order-level
     const discountPercentage = clampPct(
       it.discountPercentage ?? orderDiscountPct
     );
 
-    // ---- IMPORTANT CHANGE ----
-    // Treat `it.price` as the *discounted* price coming from backend.
-    // Other fields (originalPrice, mrp, etc.) are treated as true MRP.
     let discountedPrice = toNum(
       it.discountedPrice ??
         it.salePrice ??
         it.offerPrice ??
-        it.price ?? // price is considered FINAL (after discount)
+        it.price ??
         0
     );
 
@@ -110,20 +101,17 @@ const normalizeOrderItems = (order) => {
         it.basePrice ??
         it.unitPrice ??
         it.productPrice ??
-        0 // <- notice: we DO NOT fall back to it.price here
+        0
     );
 
-    // If we only have discounted price + % OFF, recover original MRP
     if (!originalPrice && discountedPrice && discountPercentage > 0) {
-      const recovered = recoverOriginalFromDiscounted(
+      originalPrice = recoverOriginalFromDiscounted(
         discountedPrice,
         discountPercentage,
         5000
       );
-      originalPrice = toNum(recovered);
     }
 
-    // If we have original but no discounted, compute the discounted price
     if (!discountedPrice && originalPrice) {
       if (discountPercentage > 0) {
         discountedPrice = priceAfterPctWholeRupee(
@@ -136,7 +124,6 @@ const normalizeOrderItems = (order) => {
       }
     }
 
-    // If still only one value present (and no discount%), treat them equal
     if (!originalPrice && discountedPrice && discountPercentage === 0) {
       originalPrice = discountedPrice;
     }
@@ -147,16 +134,14 @@ const normalizeOrderItems = (order) => {
     return {
       productName: it.productName || it.name || "Product",
       productImage: it.productImage || it.image || "/media/products.png",
-      originalPrice,      // e.g. 230.00 (per unit)
-      discountedPrice,    // e.g. 221.00 (per unit)
-      discountPercentage, // e.g. 4
+      originalPrice,
+      discountedPrice,
+      discountPercentage,
       quantity: toNum(it.quantity ?? 1),
     };
   });
 };
 
-
-// ---------- identity helpers ----------
 const normalizeEmail = (s) => (s || "").trim().toLowerCase();
 
 const orderBelongsToUser = (order, user) => {
@@ -177,22 +162,20 @@ const orderBelongsToUser = (order, user) => {
     ""
   ).toString();
 
-  const emailMatch = !!userEmail && !!orderEmail && orderEmail === userEmail;
-  const idMatch = !!userId && !!orderUserId && orderUserId === userId;
-
-  return emailMatch || idMatch;
+  return (
+    (userEmail && userEmail === orderEmail) ||
+    (userId && userId === orderUserId)
+  );
 };
 
-// ---------- pricing constants (align with Checkout / Cart patterns) ----------
 const FREE_SHIPPING_THRESHOLD = 2000;
-const BASE_SHIPPING_FEE = 0; // same as checkout
+const BASE_SHIPPING_FEE = 0;
 const GST_RATE = 0.18;
 
 export default function OrderDetails() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const orderId = new URLSearchParams(location.search).get("orderId");
   const orderSuccess = location.state?.success;
 
   const [orders, setOrders] = useState([]);
@@ -222,12 +205,10 @@ export default function OrderDetails() {
       const data = await res.json();
       const allOrders = Array.isArray(data) ? data : data.items || [];
 
-      // Sort latest first
       const sorted = allOrders.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
 
-      // filter only this user's orders
       const userOrders = sorted.filter((order) =>
         orderBelongsToUser(order, user)
       );
@@ -246,7 +227,6 @@ export default function OrderDetails() {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Refetch if localStorage user changes
   useEffect(() => {
     const onStorage = (e) => {
       if (e.key === "user") fetchOrders();
@@ -255,20 +235,9 @@ export default function OrderDetails() {
     return () => window.removeEventListener("storage", onStorage);
   }, [fetchOrders]);
 
-  const openLogoutModal = () => setShowLogoutModal(true);
-  const closeLogoutModal = () => setShowLogoutModal(false);
   const handleLogoutConfirm = () => {
     localStorage.removeItem("user");
-    setShowLogoutModal(false);
     navigate("/login");
-  };
-
-  const sidebarItemStyle = {
-    fontFamily: "poppins",
-    fontSize: "18px",
-    padding: "15px 0",
-    cursor: "pointer",
-    fontWeight: "bold",
   };
 
   return (
@@ -278,40 +247,68 @@ export default function OrderDetails() {
         className="mt-5 mb-5"
       >
         <Row className="align-items-start g-4">
-          {/* LEFT SIDEBAR */}
+          {/* SIDEBAR */}
           <Col xs={12} md={3}>
             <div style={{ borderRight: "1px solid #ddd", paddingRight: 10 }}>
               <div
-                style={sidebarItemStyle}
+                style={{
+                  fontWeight: "bold",
+                  fontSize: 18,
+                  padding: "15px 0",
+                  cursor: "pointer",
+                }}
                 onClick={() => navigate("/profile-details")}
               >
                 Profile &gt;
               </div>
               <div
-                style={sidebarItemStyle}
+                style={{
+                  fontWeight: "bold",
+                  fontSize: 18,
+                  padding: "15px 0",
+                  cursor: "pointer",
+                }}
                 onClick={() => navigate("/order-details")}
               >
                 Orders &gt;
               </div>
               <div
-                style={sidebarItemStyle}
+                style={{
+                  fontWeight: "bold",
+                  fontSize: 18,
+                  padding: "15px 0",
+                  cursor: "pointer",
+                }}
                 onClick={() => navigate("/wishlist")}
               >
                 Wishlist &gt;
               </div>
               <div
-                style={sidebarItemStyle}
+                style={{
+                  fontWeight: "bold",
+                  fontSize: 18,
+                  padding: "15px 0",
+                  cursor: "pointer",
+                }}
                 onClick={() => navigate("/address-details")}
               >
                 Address Book &gt;
               </div>
-              <div style={sidebarItemStyle} onClick={openLogoutModal}>
+              <div
+                style={{
+                  fontWeight: "bold",
+                  fontSize: 18,
+                  padding: "15px 0",
+                  cursor: "pointer",
+                }}
+                onClick={() => setShowLogoutModal(true)}
+              >
                 Log Out &gt;
               </div>
             </div>
           </Col>
 
-          {/* RIGHT CONTENT */}
+          {/* MAIN CONTENT */}
           <Col xs={12} md={9}>
             {loading && (
               <div className="d-flex align-items-center gap-2">
@@ -320,33 +317,40 @@ export default function OrderDetails() {
               </div>
             )}
 
-            {!loading && error && (
-              <Alert variant="danger" className="mb-3">
+            {error && (
+              <Alert variant="danger" className="mt-3">
                 {error}
               </Alert>
             )}
 
             {!loading && !error && orders.length === 0 && (
-              <Alert variant="info">No order details available.</Alert>
+              <Alert variant="info" className="mt-3">
+                No order details available.
+              </Alert>
             )}
 
             {!loading &&
               !error &&
-              orders.length > 0 &&
               orders.map((order, index) => {
                 const items = normalizeOrderItems(order);
 
-                // ----------------------------
-                // PRICING (mirrors Checkout logic)
-                // ----------------------------
+                // ---------- detect FAILED orders ----------
+                const rawStatus = (
+                  order.status ||
+                  order.orderStatus ||
+                  order.bookingStatus ||
+                  order.paymentStatus ||
+                  ""
+                ).toString();
 
-                // 1) Items subtotal (MRP – original price)
+                const isFailed = /fail|failed|payment_failed/i.test(rawStatus);
+
+                // ---------- pricing (for successful orders only) ----------
                 const originalSubtotal = items.reduce(
                   (sum, p) => sum + toNum(p.originalPrice) * toNum(p.quantity),
                   0
                 );
 
-                // 2) Discount from original vs discounted price
                 const itemsDiscount = items.reduce((sum, p) => {
                   const orig = toNum(p.originalPrice);
                   const disc = toNum(p.discountedPrice);
@@ -354,64 +358,22 @@ export default function OrderDetails() {
                   return sum + (orig - disc) * qty;
                 }, 0);
 
-                let discount = Math.round(itemsDiscount * 100) / 100;
-
-                // Order-level discount from backend (percentage or amount)
-                const orderLevelDiscountPct = clampPct(
-                  order.discountPercentage ?? 0
-                );
-                const orderLevelDiscountAmount = toNum(
-                  order.discountAmount ??
-                    order.couponDiscount ??
-                    order.offerDiscount ??
-                    0
-                );
-
-                // If per-item discount is 0 but backend has discount info, use backend data
-                if (discount <= 0) {
-                  if (orderLevelDiscountAmount > 0) {
-                    discount =
-                      Math.round(orderLevelDiscountAmount * 100) / 100;
-                  } else if (
-                    orderLevelDiscountPct > 0 &&
-                    originalSubtotal > 0
-                  ) {
-                    const rawDisc =
-                      (originalSubtotal * orderLevelDiscountPct) / 100;
-                    discount = Math.round(rawDisc * 100) / 100;
-                  }
-                }
-
-                // Subtotal after discount
+                const discount = Math.round(itemsDiscount * 100) / 100;
                 const fixedDiscountedSubtotal = Math.max(
                   0,
                   originalSubtotal - discount
                 );
 
-                // Shipping
                 const shipping =
-                  order.shippingFee != null
-                    ? toNum(order.shippingFee)
-                    : fixedDiscountedSubtotal >= FREE_SHIPPING_THRESHOLD
+                  fixedDiscountedSubtotal >= FREE_SHIPPING_THRESHOLD
                     ? 0
                     : BASE_SHIPPING_FEE;
 
-                // GST on discounted subtotal
                 const tax = fixedDiscountedSubtotal * GST_RATE;
-
-                // Final total: prefer backend amount, else recompute
-                const computedTotal =
-                  fixedDiscountedSubtotal + shipping + tax;
                 const total =
-                  order.amount != null ? toNum(order.amount) : computedTotal;
-
-                // For display: discount percentage (prefer backend)
-                let displayDiscountPct = orderLevelDiscountPct;
-                if (!displayDiscountPct && originalSubtotal > 0 && discount > 0) {
-                  displayDiscountPct = Math.round(
-                    (discount / originalSubtotal) * 100
-                  );
-                }
+                  order.amount != null
+                    ? toNum(order.amount)
+                    : fixedDiscountedSubtotal + shipping + tax;
 
                 const addr = order.address || order.shippingAddress || {};
 
@@ -432,341 +394,304 @@ export default function OrderDetails() {
                         fontSize: 24,
                       }}
                     >
-                      Order{" "}
-                      {order.merchantOrderId
-                        ? `#${order.merchantOrderId}`
-                        : `#${index + 1}`}
+                      Order #{order.merchantOrderId || index + 1}
                     </h2>
 
                     <div className="p-3 mt-4 order-box">
-                      {/* Header: title + PDF download */}
+                      {/* HEADER */}
                       <div className="d-flex justify-content-between align-items-center">
                         <h5 className="invoice-title m-0">ORDER INVOICE</h5>
 
-                        <DownloadPDF
-                          order={order}
-                          address={addr}
-                          orderItems={items}
-                          subtotal={fixedDiscountedSubtotal}
-                          shipping={shipping}
-                          tax={tax}
-                          total={total}
-                        />
+                        {isFailed ? (
+                          <span
+                            style={{
+                              color: "#d32f2f",
+                              fontWeight: 600,
+                              fontSize: 14,
+                            }}
+                          >
+                            Payment failed – invoice not available.
+                          </span>
+                        ) : (
+                          <DownloadPDF
+                            order={order}
+                            address={addr}
+                            orderItems={items}
+                            subtotal={fixedDiscountedSubtotal}
+                            shipping={shipping}
+                            tax={tax}
+                            total={total}
+                          />
+                        )}
                       </div>
 
-                      {/* Items table */}
-                      <div style={{ overflowX: "auto" }}>
-                        <Table bordered className="mt-4">
-                          <thead>
-                            <tr className="table-head-row">
-                              <th
-                                style={{
-                                  color: "#00614A",
-                                  fontSize: 20,
-                                  textTransform: "uppercase",
-                                  letterSpacing: "1px",
-                                }}
-                              >
-                                Product
-                              </th>
-                              <th
-                                style={{
-                                  color: "#00614A",
-                                  fontSize: 20,
-                                  textTransform: "uppercase",
-                                  letterSpacing: "1px",
-                                }}
-                              >
-                                Quantity
-                              </th>
-                              <th
-                                style={{
-                                  color: "#00614A",
-                                  fontSize: 20,
-                                  textTransform: "uppercase",
-                                  letterSpacing: "1px",
-                                }}
-                              >
-                                Price (MRP)
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {items.length === 0 ? (
-                              <tr>
-                                <td
-                                  colSpan={3}
-                                  className="text-center py-4"
-                                  style={{ color: "#00614A" }}
-                                >
-                                  No items found for this order.
-                                </td>
-                              </tr>
-                            ) : (
-                              items.map((item, i) => {
-                                const qty = toNum(item.quantity);
-                                const unitOriginal = toNum(item.originalPrice);
-
-                                return (
-                                  <tr
-                                    key={i}
-                                    style={{
-                                      textAlign: "center",
-                                      color: "#002209",
-                                    }}
-                                  >
-                                    <td
-                                      style={{
-                                        padding: 10,
-                                        width: "50%",
-                                        textAlign: "left",
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          display: "flex",
-                                          alignItems: "center",
-                                        }}
-                                      >
-                                        <img
-                                          src={
-                                            item.productImage ||
-                                            "/media/products.png"
-                                          }
-                                          alt={item.productName}
-                                          style={{
-                                            width: 60,
-                                            height: 60,
-                                            objectFit: "contain",
-                                          }}
-                                          onError={(e) => {
-                                            if (!e.currentTarget.dataset.fallback) {
-                                              e.currentTarget.dataset.fallback =
-                                                "1";
-                                              e.currentTarget.src =
-                                                "/media/products.png";
-                                            }
-                                          }}
-                                        />
-                                        <div style={{ marginLeft: 16 }}>
-                                          <div
-                                            style={{
-                                              fontSize: 18,
-                                              marginBottom: 6,
-                                              fontWeight: 700,
-                                              color: "#00614A",
-                                            }}
-                                          >
-                                            {item.productName}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </td>
-                                    <td
-                                      style={{
-                                        color: "#00614A",
-                                        fontSize: 18,
-                                      }}
-                                    >
-                                      {qty}
-                                    </td>
-                                    <td
-                                      style={{
-                                        color: "#00614A",
-                                        fontSize: 18,
-                                      }}
-                                    >
-                                      {/* show original price (MRP) – e.g. 460 */}
-                                      <strong>{INR(unitOriginal)}</strong>
+                      {/* ✅ For FAILED orders: do NOT show anything else */}
+                      {isFailed ? null : (
+                        <>
+                          {/* ITEMS TABLE */}
+                          <div style={{ overflowX: "auto" }}>
+                            <Table bordered className="mt-4">
+                              <thead>
+                                <tr className="table-head-row">
+                                  <th>Product</th>
+                                  <th>Qty</th>
+                                  <th>MRP</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {items.length === 0 ? (
+                                  <tr>
+                                    <td colSpan={3} className="text-center py-4">
+                                      No items found for this order.
                                     </td>
                                   </tr>
-                                );
-                              })
-                            )}
-                          </tbody>
-                        </Table>
-                      </div>
+                                ) : (
+                                  items.map((item, i) => (
+                                    <tr key={i}>
+                                      <td>{item.productName}</td>
+                                      <td>{item.quantity}</td>
+                                      <td>{INR(item.originalPrice)}</td>
+                                    </tr>
+                                  ))
+                                )}
+                              </tbody>
+                            </Table>
+                          </div>
 
-                      {/* Shipping address */}
-                      <div style={{ marginTop: "5%" }}>
-                        <h4 className="h6-shipping mb-3">
-                          <strong>SHIPPING ADDRESS</strong>
-                        </h4>
-                        <div
-                          style={{
-                            fontFamily: "poppins, sans-serif",
-                            fontSize: 16,
-                            whiteSpace: "pre-line",
-                          }}
-                        >
-                          {renderAddress(addr)}
-                        </div>
-                      </div>
+                          {/* SHIPPING ADDRESS */}
+                          <div style={{ marginTop: "5%" }}>
+                            <h4 className="mb-3">
+                              <strong>SHIPPING ADDRESS</strong>
+                            </h4>
+                            <div
+                              style={{
+                                fontFamily: "poppins, sans-serif",
+                                fontSize: 16,
+                                whiteSpace: "pre-line",
+                              }}
+                            >
+                              {renderAddress(addr)}
+                            </div>
+                          </div>
 
-                      {/* Totals section */}
-                      <div className="mt-5 d-flex justify-content-end">
-                        <table
-                          className="table table-borderless w-auto text-end"
-                          style={{ width: 320, color: "#00614A" }}
-                        >
-                          <tbody>
-                            {/* 1. ORIGINAL AMOUNT (MRP) */}
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: 600,
-                                  letterSpacing: ".5px",
-                                  fontSize: 18,
-                                }}
-                              >
-                                ORIGINAL AMOUNT (MRP)
-                              </td>
-                              <td
-                                style={{
-                                  width: 200,
-                                  fontWeight: 700,
-                                  fontSize: 18,
-                                }}
-                              >
-                                <strong>{INR(originalSubtotal)}</strong>
-                              </td>
-                            </tr>
-
-                            {/* 2. DISCOUNT PERCENTAGE (from backend if present) */}
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: 600,
-                                  letterSpacing: ".5px",
-                                  fontSize: 18,
-                                }}
-                              >
-                                DISCOUNT (%)
-                              </td>
-                              <td
-                                style={{
-                                  fontWeight: 700,
-                                  fontSize: 18,
-                                }}
-                              >
-                                {displayDiscountPct
-                                  ? `${displayDiscountPct}%`
-                                  : "0%"}
-                              </td>
-                            </tr>
-
-                            {/* 3. DISCOUNT AMOUNT (₹) */}
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: 600,
-                                  letterSpacing: ".5px",
-                                  fontSize: 18,
-                                }}
-                              >
-                                DISCOUNT AMOUNT
-                              </td>
-                              <td
-                                style={{
-                                  fontWeight: 700,
-                                  fontSize: 18,
-                                }}
-                              >
-                                <strong>- {INR(discount)}</strong>
-                              </td>
-                            </tr>
-
-                            {/* 4. AMOUNT AFTER DISCOUNT */}
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: 600,
-                                  letterSpacing: ".5px",
-                                  fontSize: 18,
-                                }}
-                              >
-                                AMOUNT AFTER DISCOUNT
-                              </td>
-                              <td
-                                style={{
-                                  fontWeight: 700,
-                                  fontSize: 18,
-                                }}
-                              >
-                                <strong>{INR(fixedDiscountedSubtotal)}</strong>
-                              </td>
-                            </tr>
-
-                            {/* 5. SHIPPING */}
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: 700,
-                                  letterSpacing: ".5px",
-                                }}
-                              >
-                                SHIPPING
-                              </td>
-                              <td
-                                style={{
-                                  fontWeight: 700,
-                                  letterSpacing: "1px",
-                                }}
-                              >
-                                <strong>{INR(shipping)}</strong>
-                              </td>
-                            </tr>
-
-                            {/* 6. GST */}
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: 700,
-                                  letterSpacing: "1px",
-                                }}
-                              >
-                                GST (18%)
-                              </td>
-                              <td
-                                style={{
-                                  fontWeight: 700,
-                                  letterSpacing: "1px",
-                                }}
-                              >
-                                <strong>{INR(tax)}</strong>
-                              </td>
-                            </tr>
-
-                            <tr>
-                              <td colSpan={2}>
-                                <hr />
-                              </td>
-                            </tr>
-
-                            {/* 7. FINAL AMOUNT PAID */}
-                            <tr>
-                              <td
-                                style={{
-                                  fontWeight: 600,
-                                  fontSize: 20,
-                                  letterSpacing: "1px",
-                                }}
-                              >
-                                <strong>AMOUNT PAID</strong>
-                              </td>
-                              <td
-                                style={{
-                                  fontWeight: 700,
-                                  fontSize: 20,
-                                }}
-                              >
-                                <strong>{INR(total)}</strong>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
+                          {/* TOTALS SECTION */}
+                          <div className="mt-5 d-flex justify-content-end">
+                            <table
+                              className="table table-borderless w-auto text-end"
+                              style={{ width: 320, color: "#00614A" }}
+                            >
+                              <tbody>
+                                <tr>
+                                  <td
+                                    style={{
+                                      fontWeight: 600,
+                                      letterSpacing: ".5px",
+                                      fontSize: 18,
+                                    }}
+                                  >
+                                    ORIGINAL AMOUNT (MRP)
+                                  </td>
+                                  <td
+                                    style={{
+                                      width: 200,
+                                      fontWeight: 700,
+                                      fontSize: 18,
+                                    }}
+                                  >
+                                    {INR(originalSubtotal)}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    style={{
+                                      fontWeight: 600,
+                                      letterSpacing: ".5px",
+                                      fontSize: 18,
+                                    }}
+                                  >
+                                    DISCOUNT AMOUNT
+                                  </td>
+                                  <td
+                                    style={{
+                                      fontWeight: 700,
+                                      fontSize: 18,
+                                    }}
+                                  >
+                                    - {INR(discount)}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    style={{
+                                      fontWeight: 600,
+                                      letterSpacing: ".5px",
+                                      fontSize: 18,
+                                    }}
+                                  >
+                                    AMOUNT AFTER DISCOUNT
+                                  </td>
+                                  <td
+                                    style={{
+                                      fontWeight: 700,
+                                      fontSize: 18,
+                                    }}
+                                  >
+                                    {INR(fixedDiscountedSubtotal)}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    style={{
+                                      fontWeight: 700,
+                                      letterSpacing: ".5px",
+                                    }}
+                                  >
+                                    SHIPPING
+                                  </td>
+                                  <td
+                                    style={{
+                                      fontWeight: 700,
+                                      letterSpacing: "1px",
+                                    }}
+                                  >
+                                    {INR(shipping)}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    style={{
+                                      fontWeight: 700,
+                                      letterSpacing: "1px",
+                                    }}
+                                  >
+                                    GST (18%)
+                                  </td>
+                                  <td
+                                    style={{
+                                      fontWeight: 700,
+                                      letterSpacing: "1px",
+                                    }}
+                                  >
+                                    {INR(tax)}
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td colSpan={2}>
+                                    <hr />
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    style={{
+                                      fontWeight: 600,
+                                      fontSize: 20,
+                                      letterSpacing: "1px",
+                                    }}
+                                  >
+                                    AMOUNT PAID
+                                  </td>
+                                  <td
+                                    style={{
+                                      fontWeight: 700,
+                                      fontSize: 20,
+                                    }}
+                                  >
+                                    {INR(total)}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </>
+                      )}
                     </div>
+                      {/* Order Tracking */}
+<div className="tracking-container mt-5">
+  <h5 className="tracking-title">Track Order</h5>
+
+  <p className="fw-bold">
+    Order #{String(order.customOrderId || order._id || "").slice(-12)} -{" "}
+    {order.status || "Pending"}
+  </p>
+
+  {(() => {
+    const status = order.status || "Pending";
+
+    const isDispatched =
+      status === "Ready for Dispatch" || status === "Delivered";
+    const isDelivered = status === "Delivered";
+
+    const placedTime = order.createdAt;
+    const dispatchedTime =
+      order.dispatchDate || (isDispatched ? order.updatedAt : null);
+    const deliveredTime =
+      order.deliveryDate || (isDelivered ? order.updatedAt : null);
+
+    const steps = [
+      {
+        label: "Order Placed",
+        icon: <FaShoppingBag size={28} />,
+        isActive: true,
+        time: placedTime,
+      },
+      {
+        label: "Order Dispatched",
+        icon: <FaShippingFast size={28} />,
+        isActive: isDispatched,
+        time: dispatchedTime,
+      },
+      {
+        label: "Delivered Successfully",
+        icon: <FaCheckCircle size={28} />,
+        isActive: isDelivered,
+        time: deliveredTime,
+      },
+    ];
+
+    return (
+      <Row className="text-center align-items-center my-4">
+        {steps.map((step, i) => (
+          <Col key={i} xs={12} sm={4} className="mb-4">
+            <div
+              style={{
+                backgroundColor: step.isActive ? "#002209" : "transparent",
+                border: step.isActive ? "none" : "1px solid lightgray",
+                borderRadius: "50%",
+                padding: "10px",
+                margin: "auto",
+                width: "60px",
+                height: "60px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: step.isActive ? "#fff" : "#000",
+              }}
+            >
+              {step.icon}
+            </div>
+
+            <h6>{step.label}</h6>
+
+            <p style={{ fontSize: "12px" }}>
+              {step.time
+                ? new Date(step.time).toLocaleDateString()
+                : "—"}
+            </p>
+            <p style={{ fontSize: "12px" }}>
+              {step.time
+                ? new Date(step.time).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "—"}
+            </p>
+          </Col>
+        ))}
+      </Row>
+    );
+  })()}
+</div>
+
                   </div>
                 );
               })}
@@ -774,14 +699,21 @@ export default function OrderDetails() {
         </Row>
       </Container>
 
-      {/* Logout confirmation modal */}
-      <Modal show={showLogoutModal} onHide={closeLogoutModal} centered>
+      {/* LOGOUT MODAL */}
+      <Modal
+        show={showLogoutModal}
+        onHide={() => setShowLogoutModal(false)}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Log out?</Modal.Title>
         </Modal.Header>
         <Modal.Body>You're about to log out. Continue?</Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={closeLogoutModal}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowLogoutModal(false)}
+          >
             Cancel
           </Button>
           <Button variant="danger" onClick={handleLogoutConfirm}>

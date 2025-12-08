@@ -36,6 +36,12 @@ function firstImageOf(p) {
   return p.image || p.thumbnail || p.featuredImage || "";
 }
 
+// small helper to coerce values to number safely
+const toNum = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 export default function Products_Sliders() {
   const [isVisible, setIsVisible] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -63,14 +69,23 @@ export default function Products_Sliders() {
 
         const res = await fetch(PRODUCTS_URL, {
           headers: { "Content-Type": "application/json" },
-          // credentials: "include", // only if your API truly needs cookies
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
         const raw = Array.isArray(data) ? data : (data.items || data.data || []);
 
-        const mapped = (raw || []).map((p) => {
+        // ✅ 1) Filter out products with stock 0 / missing
+        const inStockOnly = (raw || []).filter((p) => {
+          const stockVal =
+            typeof p.stock === "number"
+              ? p.stock
+              : toNum(p.stock); // handle string or undefined
+          return stockVal > 0;
+        });
+
+        // ✅ 2) Map only in-stock products
+        const mapped = inStockOnly.map((p) => {
           const rawImg = firstImageOf(p);
           const img = toAbsolute(rawImg);
 
@@ -97,6 +112,10 @@ export default function Products_Sliders() {
             image: img,
             originalPrice,
             discountedPrice,
+            stock:
+              typeof p.stock === "number"
+                ? p.stock
+                : toNum(p.stock), // keep for debugging/future use
           };
         });
 
@@ -232,7 +251,7 @@ export default function Products_Sliders() {
                     src={item.image}
                     alt={item.name}
                     loading="lazy"
-                  /*  onError={(e) => {
+                    /* onError={(e) => {
                       e.currentTarget.src = fallbackImg; // fallback if image 404/blocked
                     }}*/
                   />
@@ -243,16 +262,26 @@ export default function Products_Sliders() {
                     </h6>
 
                     <div className="v-stars" style={{ marginInline: "auto" }}>
-                      {[visiblestar, visiblestar, visiblestar, visiblestar, hiddenstar].map((s, k) => (
-                        <img key={k} src={s} alt="star" style={{ width: 14, height: 14 }} />
-                      ))}
+                      {[visiblestar, visiblestar, visiblestar, visiblestar, hiddenstar].map(
+                        (s, k) => (
+                          <img key={k} src={s} alt="star" style={{ width: 14, height: 14 }} />
+                        )
+                      )}
                     </div>
 
                     <div className="v-price" style={{ marginInline: "auto" }}>
                       {item.originalPrice > item.discountedPrice && item.originalPrice > 0 && (
-                        <span className="v-old">₹{Number(item.originalPrice).toFixed(2)}</span>
+                        <span className="v-old">
+                          ₹{Number(item.originalPrice).toFixed(2)}
+                        </span>
                       )}
-                      <span style={{ fontWeight: "bold", color: "#00614A", marginRight: 8 }}>
+                      <span
+                        style={{
+                          fontWeight: "bold",
+                          color: "#00614A",
+                          marginRight: 8,
+                        }}
+                      >
                         ₹{Number(item.discountedPrice || item.originalPrice || 0).toFixed(2)}
                       </span>
                       {item.originalPrice > item.discountedPrice && item.originalPrice > 0 && (
@@ -261,7 +290,8 @@ export default function Products_Sliders() {
                             0,
                             Math.round(
                               ((Number(item.originalPrice) - Number(item.discountedPrice)) /
-                                Number(item.originalPrice)) * 100
+                                Number(item.originalPrice)) *
+                                100
                             )
                           )}
                           % OFF

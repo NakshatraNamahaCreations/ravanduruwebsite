@@ -96,7 +96,16 @@ export default function Best_Seller() {
           ? body.items
           : [];
 
-        const formatted = list.map((p) => {
+        // ✅ 1) Filter OUT out-of-stock products (stock <= 0 or missing)
+        const inStockOnly = list.filter((p) => {
+          const stockVal =
+            typeof p.stock === "number"
+              ? p.stock
+              : toNum(p.stock); // fallback if it's string
+          return stockVal > 0;
+        });
+
+        const formatted = inStockOnly.map((p) => {
           const { originalPrice, discountedPrice } = bestPrices(p);
           const percentOff =
             originalPrice > 0 &&
@@ -117,6 +126,10 @@ export default function Best_Seller() {
             originalPrice,
             discountedPrice,
             percentOff,
+            stock:
+              typeof p.stock === "number"
+                ? p.stock
+                : toNum(p.stock), // keep if needed later
           };
         });
 
@@ -220,12 +233,10 @@ export default function Best_Seller() {
                       }}
                     >
                       <img
-                        src={item.image} // ✅ use `image`, not `images`
+                        src={item.image}
                         alt={item.name}
                         className="product-image"
-                        
                         onError={(e) => {
-                          // avoid infinite loop
                           e.currentTarget.onerror = null;
                           e.currentTarget.src = "/media/default.jpg";
                         }}
