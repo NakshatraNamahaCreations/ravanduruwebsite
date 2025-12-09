@@ -2984,14 +2984,8 @@ export default function Checkout() {
   const navigate = useNavigate();
   const cartItems = useSelector((s) => s.cart.cartItems);
 
-  /* ----------------------- SERVER ADDRESSES STATE ---------------------- */
-  const [addresses, setAddresses] = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
-  const [addrLoading, setAddrLoading] = useState(false);
-  const [addrError, setAddrError] = useState("");
-
-  const [showForm, setShowForm] = useState(false);
-  const [savingNew, setSavingNew] = useState(false);
+  /* ----------------------- USER STATE (LOGIN EMAIL) -------------------- */
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [form, setForm] = useState({
     email: "",
@@ -3007,10 +3001,32 @@ export default function Checkout() {
     country: "India",
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    const u = getAuthUser();
+    setCurrentUser(u || null);
+
+    // Pre-fill form email with login email on first load only
+    if (u?.email) {
+      setForm((prev) => ({
+        ...prev,
+        email: prev.email || u.email,
+      }));
+    }
+  }, []);
 
   const handleFormChange = (e) =>
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+
+  /* ----------------------- SERVER ADDRESSES STATE ---------------------- */
+  const [addresses, setAddresses] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [addrLoading, setAddrLoading] = useState(false);
+  const [addrError, setAddrError] = useState("");
+
+  const [showForm, setShowForm] = useState(false);
+  const [savingNew, setSavingNew] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(false);
 
   /* ----------------------- FETCH ADDRESSES ----------------------------- */
   useEffect(() => {
@@ -3049,18 +3065,28 @@ export default function Checkout() {
           [];
 
         const current = getAuthUser();
-        let mine = arr;
+let mine = arr;
 
-        if (current) {
-          const uid = String(current.id || current._id).trim();
-          const email = String(current.email || "").toLowerCase().trim();
+if (current) {
+  const uid = String(
+    current.id || current._id || current.userId || ""
+  ).trim();
+  const email = String(current.email || "").toLowerCase().trim();
 
-          mine = arr.filter((a) => {
-            const aUid = String(a.userId || "").trim();
-            const aEmail = String(a.email || "").toLowerCase().trim();
-            return aUid === uid || aEmail === email;
-          });
-        }
+  mine = arr.filter((a) => {
+    const aUid = String(a.userId || "").trim();
+    const aEmail = String(a.email || "").toLowerCase().trim();
+
+    // ✅ Prefer userId match (works even if address email is different)
+    if (uid && aUid) return aUid === uid;
+
+    // ✅ Fallback for older records that only stored email
+    if (!aUid && uid && email && aEmail) return aEmail === email;
+
+    return false;
+  });
+}
+
 
         if (!mounted) return;
         setAddresses(mine);
@@ -3071,8 +3097,7 @@ export default function Checkout() {
 
         if (storedPref) {
           preferred = mine.find(
-            (x) =>
-              (x._id || x.id)?.toString() === storedPref.toString()
+            (x) => (x._id || x.id)?.toString() === storedPref.toString()
           );
         }
 
@@ -3101,6 +3126,12 @@ export default function Checkout() {
 
   const selectedAddress = useMemo(
     () => addresses.find((a) => (a._id || a.id) === selectedId) || null,
+    [addresses, selectedId]
+  );
+
+  const otherAddresses = useMemo(
+    () =>
+      addresses.filter((a) => (a._id || a.id) !== selectedId) || [],
     [addresses, selectedId]
   );
 
@@ -3155,6 +3186,9 @@ export default function Checkout() {
       return;
     }
 
+    const current = getAuthUser(); 
+
+    // 👇 Email here CAN be different from login email
     const payload = {
       firstName: form.firstName,
       lastName: form.lastName,
@@ -3166,6 +3200,10 @@ export default function Checkout() {
       pincode: form.pincode,
       country: form.country || "India",
     };
+
+   if (current?.id || current?._id || current?.userId) {
+    payload.userId = current.id || current._id || current.userId;
+  }
 
     setSavingNew(true);
 
@@ -3190,12 +3228,16 @@ export default function Checkout() {
       let mine = arr;
 
       if (current) {
-        const uid = String(current.id || current._id).trim();
+        const uid = String(current.id || current._id || "").trim();
         const email = String(current.email || "").toLowerCase().trim();
+
         mine = arr.filter((a) => {
           const aUid = String(a.userId || "").trim();
           const aEmail = String(a.email || "").toLowerCase().trim();
-          return aUid === uid || aEmail === email;
+
+          if (uid && aUid) return aUid === uid;
+          if (!uid && email && aEmail) return aEmail === email;
+          return false;
         });
       }
 
@@ -3263,7 +3305,6 @@ export default function Checkout() {
           return;
         }
 
-        // Fetch individually
         const productResults = await Promise.all(
           ids.map(async (id) => {
             const r = await fetch(`${API_BASE}/api/products/${id}`);
@@ -3355,7 +3396,6 @@ export default function Checkout() {
   };
 
   /* ------------------------------- TOTALS ------------------------------ */
-
   const FREE_SHIPPING_THRESHOLD = 2000;
   const BASE_SHIPPING_FEE = 0;
 
@@ -3373,19 +3413,19 @@ export default function Checkout() {
       const info = getPriceInfo(item);
       const orig = Number(info.originalPrice || 0);
       const pct = Number(info.discountPercentage || 0);
-      return sum + (orig * pct) / 100 * q;
+      return sum + ((orig * pct) / 100) * q;
     }, 0);
   }, [cartItems, pricing]);
 
-  const discountedSubtotal = useMemo(() => {
-    return Math.max(0, subtotal - itemsDiscount);
-  }, [subtotal, itemsDiscount]);
+  const discountedSubtotal = useMemo(
+    () => Math.max(0, subtotal - itemsDiscount),
+    [subtotal, itemsDiscount]
+  );
 
   const shippingFee =
     discountedSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : BASE_SHIPPING_FEE;
 
   const gst = discountedSubtotal * 0.18;
-
   const grandTotal = discountedSubtotal + shippingFee + gst;
 
   const itemsCount = (cartItems || []).reduce(
@@ -3428,14 +3468,13 @@ export default function Checkout() {
       return;
     }
 
-    const currentUser = getAuthUser();
-    if (!currentUser?.id && !currentUser?._id) {
+    const current = getAuthUser();
+    if (!current?.id && !current?._id) {
       alert("Please log in to continue.");
       return;
     }
 
-    const customerId =
-      currentUser.id || currentUser._id || currentUser.userId;
+    const customerId = current.id || current._id || current.userId;
 
     setIsLoading(true);
 
@@ -3454,15 +3493,12 @@ export default function Checkout() {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error(await res.text());
-      }
+      if (!res.ok) throw new Error(await res.text());
 
       const paymentResponse = await res.json();
       const redirectUrl = paymentResponse?.phonepeResponse?.redirectUrl;
       const orderId =
-        paymentResponse?.phonepeResponse
-          ?.merchantTransactionId ||
+        paymentResponse?.phonepeResponse?.merchantTransactionId ||
         paymentResponse?.phonepeResponse?.orderId;
 
       if (redirectUrl && orderId) {
@@ -3475,7 +3511,6 @@ export default function Checkout() {
             orderId,
           })
         );
-
         window.location.href = redirectUrl;
       } else {
         alert("Payment initiation failed.");
@@ -3501,9 +3536,7 @@ export default function Checkout() {
             >
               <span
                 className={`badge ${
-                  unlockLeft > 0
-                    ? "badge-warn"
-                    : "badge-success"
+                  unlockLeft > 0 ? "badge-warn" : "badge-success"
                 }`}
               >
                 {unlockLeft > 0 ? "Almost there" : "Unlocked"}
@@ -3517,8 +3550,7 @@ export default function Checkout() {
 
             <span>
               Shipping ₹
-              {(subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 50)}
-              {" "}if not unlocked
+              {subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 50} if not unlocked
             </span>
           </div>
 
@@ -3532,14 +3564,10 @@ export default function Checkout() {
             </div>
 
             {pricingLoading && (
-              <div className="px-3 pb-2 text-muted">
-                Updating prices…
-              </div>
+              <div className="px-3 pb-2 text-muted">Updating prices…</div>
             )}
             {pricingError && (
-              <div className="px-3 pb-2 text-danger">
-                {pricingError}
-              </div>
+              <div className="px-3 pb-2 text-danger">{pricingError}</div>
             )}
 
             <div className="bagList">
@@ -3564,9 +3592,7 @@ export default function Checkout() {
                       <div className="bagSub">Qty {q}</div>
                     </div>
 
-                    <div className="bagPrice">
-                      ₹{line.toFixed(2)}
-                    </div>
+                    <div className="bagPrice">₹{line.toFixed(2)}</div>
                   </div>
                 );
               })}
@@ -3579,11 +3605,73 @@ export default function Checkout() {
             <Button
               variant="success"
               size="sm"
-              onClick={() => setShowForm((s) => !s)}
+              onClick={() =>
+                setShowForm((prev) => {
+                  const next = !prev;
+                  // When opening the form, default email = login email
+                  if (!prev && currentUser?.email) {
+                    setForm((f) => ({
+                      ...f,
+                      email: f.email || currentUser.email,
+                    }));
+                  }
+                  return next;
+                })
+              }
             >
               {showForm ? "Close" : "+ Add New"}
             </Button>
           </div>
+
+          {/* Logged in email */}
+          {currentUser?.email && (
+            <div className="text-muted mb-2">
+              Logged in as <strong>{currentUser.email}</strong>
+            </div>
+          )}
+
+          {/* ✅ Primary/default address card – full address like screenshot */}
+          {selectedAddress && (
+            <Card className="addrPrimaryCard mb-3">
+              <Card.Body>
+                <div className="addrCard selected">
+                  <div className="addrTop">
+                    <div className="addrDot" />
+                    <div className="addrName">
+                      {selectedAddress.firstName} {selectedAddress.lastName}
+                    </div>
+                    <span className="addrTag">Default Address</span>
+                  </div>
+
+                  <div className="addrBody">
+                    <div className="line">{selectedAddress.address}</div>
+                    <div className="line">
+                      {selectedAddress.city}, {selectedAddress.state} -{" "}
+                      {selectedAddress.pincode}
+                    </div>
+                    <div className="line">
+                      Phone: {selectedAddress.mobileNumber}
+                    </div>
+                    <div className="line">{selectedAddress.email}</div>
+                  </div>
+
+                  <div className="addrActions">
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() =>
+                        handleDeleteAddress(
+                          selectedAddress._id || selectedAddress.id
+                        )
+                      }
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </Card.Body>
+            </Card>
+          )}
 
           <Card className="addrFormCard">
             <Card.Body>
@@ -3596,17 +3684,19 @@ export default function Checkout() {
                 <div className="text-danger mb-2">{addrError}</div>
               )}
 
-              {addresses.length === 0 &&
-                !addrLoading &&
+              {!addrLoading &&
+                !selectedAddress &&
+                addresses.length === 0 &&
                 !showForm && (
                   <div className="text-muted">
                     No saved addresses yet. Add one to continue.
                   </div>
                 )}
 
-              {addresses.length > 0 && (
+              {/* Other saved addresses (if more than one) */}
+              {otherAddresses.length > 0 && (
                 <div className="addressList">
-                  {addresses.map((a) => {
+                  {otherAddresses.map((a) => {
                     const id = a._id || a.id;
                     const isSelected = selectedId === id;
 
@@ -3616,9 +3706,7 @@ export default function Checkout() {
                     return (
                       <div
                         key={id}
-                        className={`addrCard ${
-                          isSelected ? "selected" : ""
-                        }`}
+                        className={`addrCard ${isSelected ? "selected" : ""}`}
                       >
                         <div className="addrTop">
                           <label className="radio">
@@ -3851,9 +3939,7 @@ export default function Checkout() {
               onClick={handlePayNow}
               disabled={isLoading}
             >
-              {isLoading
-                ? "Processing…"
-                : `Pay ₹${grandTotal.toFixed(2)}`}
+              {isLoading ? "Processing…" : `Pay ₹${grandTotal.toFixed(2)}`}
             </Button>
 
             <div className="orderNote">

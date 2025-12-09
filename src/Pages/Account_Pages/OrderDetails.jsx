@@ -12,6 +12,7 @@ import {
 } from "react-bootstrap";
 import DownloadPDF from "../../DownloadPDF";
 import { useNavigate, useLocation } from "react-router-dom";
+import { FaShoppingBag, FaShippingFast, FaCheckCircle } from "react-icons/fa";
 
 const API_BASE = "https://api.ravandurustores.com";
 
@@ -20,6 +21,7 @@ const toNum = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 };
+
 const INR = (n) => `₹ ${toNum(n).toFixed(2)}`;
 
 const clampPct = (pct) => Math.min(100, Math.max(0, Number(pct || 0)));
@@ -55,16 +57,27 @@ const recoverOriginalFromDiscounted = (discounted, pct, searchLimit = 5000) => {
 
 const renderAddress = (addr) => {
   if (!addr) return "Address not available";
+
+  // If address is just a string from backend
+  if (typeof addr === "string") {
+    return addr || "Address not available";
+  }
+
+  // Object-style address
   const parts = [
     [addr.firstName, addr.lastName].filter(Boolean).join(" "),
-    addr.address,
+    addr.address || addr.street || addr.addressLine1,
     [addr.city, addr.state].filter(Boolean).join(", "),
-    addr.pincode,
+    addr.pincode || addr.zip || addr.postalCode,
     addr.country,
     addr.email ? `Email: ${addr.email}` : null,
-    addr.mobileNumber ? `Phone: ${addr.mobileNumber}` : null,
+    addr.mobileNumber || addr.phone
+      ? `Phone: ${addr.mobileNumber || addr.phone}`
+      : null,
   ].filter(Boolean);
-  return parts.join("\n");
+
+  const result = parts.join("\n");
+  return result || "Address not available";
 };
 
 const normalizeOrderItems = (order) => {
@@ -87,11 +100,7 @@ const normalizeOrderItems = (order) => {
     );
 
     let discountedPrice = toNum(
-      it.discountedPrice ??
-        it.salePrice ??
-        it.offerPrice ??
-        it.price ??
-        0
+      it.discountedPrice ?? it.salePrice ?? it.offerPrice ?? it.price ?? 0
     );
 
     let originalPrice = toNum(
@@ -172,6 +181,14 @@ const FREE_SHIPPING_THRESHOLD = 2000;
 const BASE_SHIPPING_FEE = 0;
 const GST_RATE = 0.18;
 
+// Build proper image URL for items
+const getImageUrl = (img) => {
+  if (!img) return "/media/products.png";
+  if (img.startsWith("http://") || img.startsWith("https://")) return img;
+  const clean = img.startsWith("/") ? img : `/${img}`;
+  return `${API_BASE}${clean}`;
+};
+
 export default function OrderDetails() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -182,6 +199,9 @@ export default function OrderDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // Track which order is currently being tracked in popup
+  const [trackingOrder, setTrackingOrder] = useState(null);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -239,6 +259,8 @@ export default function OrderDetails() {
     localStorage.removeItem("user");
     navigate("/login");
   };
+
+  const closeTrackingModal = () => setTrackingOrder(null);
 
   return (
     <>
@@ -377,6 +399,16 @@ export default function OrderDetails() {
 
                 const addr = order.address || order.shippingAddress || {};
 
+                // ----- Expected delivery: 1 week from order placed -----
+                const placedDate = order.createdAt
+                  ? new Date(order.createdAt)
+                  : null;
+                const expectedDeliveryDate = placedDate
+                  ? new Date(
+                      placedDate.getTime() + 7 * 24 * 60 * 60 * 1000
+                    )
+                  : null;
+
                 return (
                   <div
                     key={order._id || index}
@@ -387,15 +419,34 @@ export default function OrderDetails() {
                       marginTop: 30,
                     }}
                   >
-                    <h2
-                      style={{
-                        fontWeight: 700,
-                        color: "#002209",
-                        fontSize: 24,
-                      }}
-                    >
-                      Order #{order.merchantOrderId || index + 1}
-                    </h2>
+                    {/* Top row: Order # (left) + Expected Delivery (right) */}
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h2
+                        style={{
+                          fontWeight: 700,
+                          color: "#002209",
+                          fontSize: 24,
+                          marginBottom: 0,
+                        }}
+                      >
+                        Order #{order.merchantOrderId || index + 1}
+                      </h2>
+
+                      <div
+                        style={{
+                          textAlign: "right",
+                          fontSize: 14,
+                          color: "#002209",
+                        }}
+                      >
+                        <div style={{ fontWeight: 600 }}>Expected Delivery</div>
+                        <div style={{ fontWeight: 500 }}>
+                          {expectedDeliveryDate
+                            ? expectedDeliveryDate.toLocaleDateString()
+                            : "—"}
+                        </div>
+                      </div>
+                    </div>
 
                     <div className="p-3 mt-4 order-box">
                       {/* HEADER */}
@@ -413,19 +464,29 @@ export default function OrderDetails() {
                             Payment failed – invoice not available.
                           </span>
                         ) : (
-                          <DownloadPDF
-                            order={order}
-                            address={addr}
-                            orderItems={items}
-                            subtotal={fixedDiscountedSubtotal}
-                            shipping={shipping}
-                            tax={tax}
-                            total={total}
-                          />
+                          <div className="d-flex align-items-center gap-2">
+                            <Button
+                              variant="outline-success"
+                              size="sm"
+                              onClick={() => setTrackingOrder(order)}
+                              style={{padding:"12px 20px", borderRadius:"0px", textTransform:"uppercase", fontWeight:"bold", letterSpacing:"0.5px", fontSize:"16px"}}
+                            >
+                              Track Order
+                            </Button>
+                            <DownloadPDF
+                              order={order}
+                              address={addr}
+                              orderItems={items}
+                              subtotal={fixedDiscountedSubtotal}
+                              shipping={shipping}
+                              tax={tax}
+                              total={total}
+                            />
+                          </div>
                         )}
                       </div>
 
-                      {/* ✅ For FAILED orders: do NOT show anything else */}
+                      {/* For FAILED orders: do NOT show anything else */}
                       {isFailed ? null : (
                         <>
                           {/* ITEMS TABLE */}
@@ -448,7 +509,27 @@ export default function OrderDetails() {
                                 ) : (
                                   items.map((item, i) => (
                                     <tr key={i}>
-                                      <td>{item.productName}</td>
+                                      <td>
+                                        <div className="d-flex align-items-center gap-2">
+                                          <img
+                                            src={getImageUrl(
+                                              item.productImage
+                                            )}
+                                            alt={item.productName}
+                                            style={{
+                                              width: 60,
+                                              height: 60,
+                                              objectFit: "cover",
+                                              borderRadius: 6,
+                                            }}
+                                            onError={(e) => {
+                                              e.target.src =
+                                                "/media/products.png";
+                                            }}
+                                          />
+                                          <span>{item.productName}</span>
+                                        </div>
+                                      </td>
                                       <td>{item.quantity}</td>
                                       <td>{INR(item.originalPrice)}</td>
                                     </tr>
@@ -605,99 +686,129 @@ export default function OrderDetails() {
                         </>
                       )}
                     </div>
-                      {/* Order Tracking */}
-<div className="tracking-container mt-5">
-  <h5 className="tracking-title">Track Order</h5>
-
-  <p className="fw-bold">
-    Order #{String(order.customOrderId || order._id || "").slice(-12)} -{" "}
-    {order.status || "Pending"}
-  </p>
-
-  {(() => {
-    const status = order.status || "Pending";
-
-    const isDispatched =
-      status === "Ready for Dispatch" || status === "Delivered";
-    const isDelivered = status === "Delivered";
-
-    const placedTime = order.createdAt;
-    const dispatchedTime =
-      order.dispatchDate || (isDispatched ? order.updatedAt : null);
-    const deliveredTime =
-      order.deliveryDate || (isDelivered ? order.updatedAt : null);
-
-    const steps = [
-      {
-        label: "Order Placed",
-        icon: <FaShoppingBag size={28} />,
-        isActive: true,
-        time: placedTime,
-      },
-      {
-        label: "Order Dispatched",
-        icon: <FaShippingFast size={28} />,
-        isActive: isDispatched,
-        time: dispatchedTime,
-      },
-      {
-        label: "Delivered Successfully",
-        icon: <FaCheckCircle size={28} />,
-        isActive: isDelivered,
-        time: deliveredTime,
-      },
-    ];
-
-    return (
-      <Row className="text-center align-items-center my-4">
-        {steps.map((step, i) => (
-          <Col key={i} xs={12} sm={4} className="mb-4">
-            <div
-              style={{
-                backgroundColor: step.isActive ? "#002209" : "transparent",
-                border: step.isActive ? "none" : "1px solid lightgray",
-                borderRadius: "50%",
-                padding: "10px",
-                margin: "auto",
-                width: "60px",
-                height: "60px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: step.isActive ? "#fff" : "#000",
-              }}
-            >
-              {step.icon}
-            </div>
-
-            <h6>{step.label}</h6>
-
-            <p style={{ fontSize: "12px" }}>
-              {step.time
-                ? new Date(step.time).toLocaleDateString()
-                : "—"}
-            </p>
-            <p style={{ fontSize: "12px" }}>
-              {step.time
-                ? new Date(step.time).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : "—"}
-            </p>
-          </Col>
-        ))}
-      </Row>
-    );
-  })()}
-</div>
-
                   </div>
                 );
               })}
           </Col>
         </Row>
       </Container>
+
+      {/* TRACKING MODAL */}
+      <Modal
+        show={!!trackingOrder}
+        onHide={closeTrackingModal}
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            {trackingOrder
+              ? `Track Order #${
+                  trackingOrder.merchantOrderId ||
+                  String(trackingOrder.customOrderId || trackingOrder._id || "")
+                    .slice(-12)
+                }`
+              : "Track Order"}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {trackingOrder && (
+            <>
+              <p className="fw-bold mb-4">
+                Status: {trackingOrder.status || "Pending"}
+              </p>
+
+              {(() => {
+                const status = trackingOrder.status || "Pending";
+
+                const isDispatched =
+                  status === "Ready for Dispatch" || status === "Delivered";
+                const isDelivered = status === "Delivered";
+
+                const placedTime = trackingOrder.createdAt;
+                const dispatchedTime =
+                  trackingOrder.dispatchDate ||
+                  (isDispatched ? trackingOrder.updatedAt : null);
+                const deliveredTime =
+                  trackingOrder.deliveryDate ||
+                  (isDelivered ? trackingOrder.updatedAt : null);
+
+                const steps = [
+                  {
+                    label: "Order Placed",
+                    icon: <FaShoppingBag size={28} />,
+                    isActive: true,
+                    time: placedTime,
+                  },
+                  {
+                    label: "Order Dispatched",
+                    icon: <FaShippingFast size={28} />,
+                    isActive: isDispatched,
+                    time: dispatchedTime,
+                  },
+                  {
+                    label: "Delivered Successfully",
+                    icon: <FaCheckCircle size={28} />,
+                    isActive: isDelivered,
+                    time: deliveredTime,
+                  },
+                ];
+
+                return (
+                  <Row className="text-center align-items-center my-4">
+                    {steps.map((step, i) => (
+                      <Col key={i} xs={12} sm={4} className="mb-4">
+                        <div
+                          style={{
+                            backgroundColor: step.isActive
+                              ? "#002209"
+                              : "transparent",
+                            border: step.isActive
+                              ? "none"
+                              : "1px solid lightgray",
+                            borderRadius: "50%",
+                            padding: "10px",
+                            margin: "auto",
+                            width: "60px",
+                            height: "60px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: step.isActive ? "#fff" : "#000",
+                          }}
+                        >
+                          {step.icon}
+                        </div>
+
+                        <h6 className="mt-2">{step.label}</h6>
+
+                        <p style={{ fontSize: "12px", marginBottom: 0 }}>
+                          {step.time
+                            ? new Date(step.time).toLocaleDateString()
+                            : "—"}
+                        </p>
+                        <p style={{ fontSize: "12px" }}>
+                          {step.time
+                            ? new Date(step.time).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "—"}
+                        </p>
+                      </Col>
+                    ))}
+                  </Row>
+                );
+              })()}
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={closeTrackingModal}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {/* LOGOUT MODAL */}
       <Modal
