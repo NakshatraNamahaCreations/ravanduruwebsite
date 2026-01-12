@@ -105,7 +105,7 @@ export default function TermsConditions() {
                           letterSpacing: "1.5px",
                         }}
                       >
-                        info@avitrispices.in
+                        av.kitchens1532@gmail.com
                       </span>
                     </li>
                     <li>
@@ -118,7 +118,7 @@ export default function TermsConditions() {
                           letterSpacing: "1.5px",
                         }}
                       >
-                        +91 734 944 4419
+                        +91 7899830366
                       </span>
                     </li>
                   </ul>

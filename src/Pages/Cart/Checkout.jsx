@@ -2903,6 +2903,1056 @@ const handlePayNow = async () => {
 
 
 // Checkout.jsx
+// import { Container, Form, Row, Col, Button, Card } from "react-bootstrap";
+// import { useState, useEffect, useMemo } from "react";
+// import { useNavigate } from "react-router-dom";
+// import { useSelector } from "react-redux";
+
+// import "./Checkout.css";
+
+// const API_BASE = "https://api.ravandurustores.com";
+
+// /* --------------------------- Small helpers --------------------------- */
+// const clampPct = (pct) => Math.min(100, Math.max(0, Number(pct || 0)));
+
+// const priceAfterPctWholeRupee = (base, pct, mode = "nearest") => {
+//   const b = Number(base) || 0;
+//   const p = clampPct(pct);
+//   const rawOff = (b * p) / 100;
+//   const off =
+//     mode === "floor"
+//       ? Math.floor(rawOff)
+//       : mode === "ceil"
+//       ? Math.ceil(rawOff)
+//       : Math.round(rawOff);
+//   return Math.max(0, b - off);
+// };
+
+// const parseSelectedWeight = (str) => {
+//   if (!str) return null;
+//   const m = String(str).trim().match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/);
+//   if (!m) return null;
+//   return { qty: m[1].toLowerCase(), unit: m[2].toLowerCase() };
+// };
+
+// const norm = (v) => String(v || "").toLowerCase().replace(/\s+/g, "");
+
+// function decodeJwtPayload(token = "") {
+//   try {
+//     const [, payload] = String(token).split(".");
+//     if (!payload) return null;
+//     const b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+//     const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+//     const json = atob(b64 + pad);
+//     return JSON.parse(json);
+//   } catch {
+//     return null;
+//   }
+// }
+
+// function getAuthUser() {
+//   try {
+//     const raw = localStorage.getItem("user");
+//     if (raw) {
+//       const u = JSON.parse(raw);
+//       if (u && typeof u === "object") return u;
+//     }
+//   } catch {}
+
+//   const token = localStorage.getItem("token") || "";
+//   const p = decodeJwtPayload(token);
+
+//   if (!p) return null;
+
+//   return {
+//     _id: p._id || p.id || p.userId || p.sub || null,
+//     id: p.id || p._id || p.userId || p.sub || null,
+//     userId: p.userId || p.sub || p.id || p._id || null,
+//     email: p.email || p.user_email || null,
+//   };
+// }
+
+// function authHeaders() {
+//   const token = localStorage.getItem("token");
+//   return token
+//     ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+//     : { "Content-Type": "application/json" };
+// }
+
+// /* ================================ Page ================================ */
+// export default function Checkout() {
+//   const navigate = useNavigate();
+//   const cartItems = useSelector((s) => s.cart.cartItems);
+
+//   /* ----------------------- USER STATE (LOGIN EMAIL) -------------------- */
+//   const [currentUser, setCurrentUser] = useState(null);
+
+//   const [form, setForm] = useState({
+//     email: "",
+//     firstName: "",
+//     lastName: "",
+//     phoneCode: "+91",
+//     phoneNumber: "",
+//     address1: "",
+//     address2: "",
+//     city: "",
+//     state: "",
+//     pincode: "",
+//     country: "India",
+//   });
+
+//   useEffect(() => {
+//     const u = getAuthUser();
+//     setCurrentUser(u || null);
+
+//     // Pre-fill form email with login email on first load only
+//     if (u?.email) {
+//       setForm((prev) => ({
+//         ...prev,
+//         email: prev.email || u.email,
+//       }));
+//     }
+//   }, []);
+
+//   const handleFormChange = (e) =>
+//     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+
+//   /* ----------------------- SERVER ADDRESSES STATE ---------------------- */
+//   const [addresses, setAddresses] = useState([]);
+//   const [selectedId, setSelectedId] = useState(null);
+//   const [addrLoading, setAddrLoading] = useState(false);
+//   const [addrError, setAddrError] = useState("");
+
+//   const [showForm, setShowForm] = useState(false);
+//   const [savingNew, setSavingNew] = useState(false);
+
+//   const [isLoading, setIsLoading] = useState(false);
+
+//   /* ----------------------- FETCH ADDRESSES ----------------------------- */
+//   useEffect(() => {
+//     let mounted = true;
+
+//     async function loadAddresses() {
+//       setAddrLoading(true);
+//       setAddrError("");
+
+//       try {
+//         const res = await fetch(`${API_BASE}/api/addresses`, {
+//           method: "GET",
+//           headers: authHeaders(),
+//         });
+
+//         if (res.status === 401 || res.status === 403) {
+//           if (!mounted) return;
+//           setAddresses([]);
+//           setSelectedId(null);
+//           setAddrError(
+//             "You are not logged in. Please sign in to view saved addresses."
+//           );
+//           return;
+//         }
+
+//         if (!res.ok) {
+//           throw new Error(`Failed to fetch addresses (HTTP ${res.status})`);
+//         }
+
+//         const data = await res.json();
+//         const arr =
+//           (Array.isArray(data) && data) ||
+//           data.addresses ||
+//           data.data ||
+//           data.items ||
+//           [];
+
+//         const current = getAuthUser();
+// let mine = arr;
+
+// if (current) {
+//   const uid = String(
+//     current.id || current._id || current.userId || ""
+//   ).trim();
+//   const email = String(current.email || "").toLowerCase().trim();
+
+//   mine = arr.filter((a) => {
+//     const aUid = String(a.userId || "").trim();
+//     const aEmail = String(a.email || "").toLowerCase().trim();
+
+//     // ✅ Prefer userId match (works even if address email is different)
+//     if (uid && aUid) return aUid === uid;
+
+//     // ✅ Fallback for older records that only stored email
+//     if (!aUid && uid && email && aEmail) return aEmail === email;
+
+//     return false;
+//   });
+// }
+
+
+//         if (!mounted) return;
+//         setAddresses(mine);
+
+//         const storedPref = localStorage.getItem("preferredAddressId");
+
+//         let preferred = null;
+
+//         if (storedPref) {
+//           preferred = mine.find(
+//             (x) => (x._id || x.id)?.toString() === storedPref.toString()
+//           );
+//         }
+
+//         if (!preferred) {
+//           preferred =
+//             mine.find((x) => x.isDefault || x.default) ||
+//             mine[mine.length - 1];
+//         }
+
+//         setSelectedId(preferred?._id || preferred?.id || null);
+//       } catch (e) {
+//         if (!mounted) return;
+//         setAddrError(e.message || "Failed to load addresses.");
+//         setAddresses([]);
+//         setSelectedId(null);
+//       } finally {
+//         if (mounted) setAddrLoading(false);
+//       }
+//     }
+
+//     loadAddresses();
+//     return () => {
+//       mounted = false;
+//     };
+//   }, []);
+
+//   const selectedAddress = useMemo(
+//     () => addresses.find((a) => (a._id || a.id) === selectedId) || null,
+//     [addresses, selectedId]
+//   );
+
+//   const otherAddresses = useMemo(
+//     () =>
+//       addresses.filter((a) => (a._id || a.id) !== selectedId) || [],
+//     [addresses, selectedId]
+//   );
+
+//   /* ---------------------- ADD NEW ADDRESS (VALIDATED) ------------------ */
+//   const handleAddNewAddress = async (e) => {
+//     e.preventDefault();
+
+//     // VALIDATION RULES
+//     const emailPattern = /^\S+@\S+\.\S+$/;
+//     const namePattern = /^[A-Za-z\s]+$/;
+//     const phonePattern = /^[0-9]{10}$/;
+//     const pincodePattern = /^[0-9]{6}$/;
+//     const cityStatePattern = /^[A-Za-z\s]+$/;
+
+//     if (!emailPattern.test(form.email)) {
+//       alert("Enter a valid email address.");
+//       return;
+//     }
+
+//     if (!namePattern.test(form.firstName)) {
+//       alert("First name must contain only letters.");
+//       return;
+//     }
+
+//     if (!namePattern.test(form.lastName)) {
+//       alert("Last name must contain only letters.");
+//       return;
+//     }
+
+//     if (!phonePattern.test(form.phoneNumber)) {
+//       alert("Phone number must be exactly 10 digits.");
+//       return;
+//     }
+
+//     if (form.address1.trim().length < 5) {
+//       alert("Address Line 1 must be at least 5 characters.");
+//       return;
+//     }
+
+//     if (!cityStatePattern.test(form.city)) {
+//       alert("City must contain only letters.");
+//       return;
+//     }
+
+//     if (!cityStatePattern.test(form.state)) {
+//       alert("State must contain only letters.");
+//       return;
+//     }
+
+//     if (!pincodePattern.test(form.pincode)) {
+//       alert("Pincode must be exactly 6 digits.");
+//       return;
+//     }
+
+//     const current = getAuthUser(); 
+
+//     // 👇 Email here CAN be different from login email
+//     const payload = {
+//       firstName: form.firstName,
+//       lastName: form.lastName,
+//       email: form.email,
+//       mobileNumber: `${form.phoneCode}${form.phoneNumber}`,
+//       state: form.state,
+//       city: form.city,
+//       address: [form.address1, form.address2].filter(Boolean).join(", "),
+//       pincode: form.pincode,
+//       country: form.country || "India",
+//     };
+
+//    if (current?.id || current?._id || current?.userId) {
+//     payload.userId = current.id || current._id || current.userId;
+//   }
+
+//     setSavingNew(true);
+
+//     try {
+//       const res = await fetch(`${API_BASE}/api/addresses`, {
+//         method: "POST",
+//         headers: authHeaders(),
+//         body: JSON.stringify(payload),
+//       });
+
+//       if (!res.ok) throw new Error(await res.text());
+
+//       const listRes = await fetch(`${API_BASE}/api/addresses`, {
+//         method: "GET",
+//         headers: authHeaders(),
+//       });
+
+//       const data = await listRes.json();
+//       const arr = data.addresses || data.data || data.items || data || [];
+
+//       const current = getAuthUser();
+//       let mine = arr;
+
+//       if (current) {
+//         const uid = String(current.id || current._id || "").trim();
+//         const email = String(current.email || "").toLowerCase().trim();
+
+//         mine = arr.filter((a) => {
+//           const aUid = String(a.userId || "").trim();
+//           const aEmail = String(a.email || "").toLowerCase().trim();
+
+//           if (uid && aUid) return aUid === uid;
+//           if (!uid && email && aEmail) return aEmail === email;
+//           return false;
+//         });
+//       }
+
+//       setAddresses(mine);
+
+//       const last = mine[mine.length - 1];
+//       const lastId = last?._id || last?.id;
+//       setSelectedId(lastId);
+
+//       localStorage.setItem("preferredAddressId", lastId);
+
+//       setShowForm(false);
+//     } catch (err) {
+//       alert(err.message || "Could not save address.");
+//     } finally {
+//       setSavingNew(false);
+//     }
+//   };
+
+//   /* --------------------------- DELETE ADDRESS -------------------------- */
+//   const handleDeleteAddress = async (id) => {
+//     if (!window.confirm("Delete this address permanently?")) return;
+
+//     try {
+//       const res = await fetch(`${API_BASE}/api/addresses/${id}`, {
+//         method: "DELETE",
+//         headers: authHeaders(),
+//       });
+
+//       if (!res.ok) throw new Error(await res.text());
+
+//       setAddresses((prev) => {
+//         const next = prev.filter((x) => (x._id || x.id) !== id);
+//         if (selectedId === id) {
+//           const first = next[0];
+//           setSelectedId(first ? first._id || first.id : null);
+//         }
+//         return next;
+//       });
+//     } catch (e) {
+//       alert(e.message || "Delete failed.");
+//     }
+//   };
+
+//   /* ------------------------------ PRICING ------------------------------ */
+//   const [pricing, setPricing] = useState({});
+//   const [productsById, setProductsById] = useState({});
+//   const [pricingLoading, setPricingLoading] = useState(false);
+//   const [pricingError, setPricingError] = useState("");
+
+//   useEffect(() => {
+//     let mounted = true;
+
+//     (async () => {
+//       try {
+//         setPricingLoading(true);
+//         setPricingError("");
+
+//         const ids = [...new Set((cartItems || []).map((i) => i.id))];
+//         if (!ids.length) {
+//           if (mounted) {
+//             setPricing({});
+//             setProductsById({});
+//           }
+//           return;
+//         }
+
+//         const productResults = await Promise.all(
+//           ids.map(async (id) => {
+//             const r = await fetch(`${API_BASE}/api/products/${id}`);
+//             if (!r.ok) throw new Error(`Product fetch failed: ${id}`);
+//             return r.json();
+//           })
+//         );
+
+//         const map = {};
+//         const byId = {};
+
+//         productResults.forEach((prod) => {
+//           if (!prod || !prod._id) return;
+
+//           byId[prod._id] = prod;
+
+//           const pct = clampPct(prod.discountPercentage);
+//           const variants = Array.isArray(prod.variants) ? prod.variants : [];
+
+//           variants.forEach((v) => {
+//             const base = Number(v.price ?? prod.price ?? prod.mrp ?? 0);
+//             const final =
+//               pct > 0
+//                 ? priceAfterPctWholeRupee(base, pct, "nearest")
+//                 : Number(prod.discountPrice ?? base);
+
+//             map[`${prod._id}|${v._id}`] = {
+//               originalPrice: base,
+//               discountedPrice: final,
+//               discountPercentage: pct,
+//             };
+//           });
+//         });
+
+//         if (mounted) {
+//           setPricing(map);
+//           setProductsById(byId);
+//         }
+//       } catch (e) {
+//         if (mounted) setPricingError(e.message);
+//       } finally {
+//         if (mounted) setPricingLoading(false);
+//       }
+//     })();
+
+//     return () => {
+//       mounted = false;
+//     };
+//   }, [cartItems]);
+
+//   const getPriceInfo = (item) => {
+//     if (!item)
+//       return { originalPrice: 0, discountedPrice: 0, discountPercentage: 0 };
+
+//     if (item.variantId) {
+//       const k = `${item.id}|${item.variantId}`;
+//       if (pricing[k]) return pricing[k];
+//     }
+
+//     const prod = productsById[item.id];
+//     const parsed = parseSelectedWeight(item.selectedWeight);
+
+//     if (prod && parsed && Array.isArray(prod.variants)) {
+//       const match = prod.variants.find(
+//         (v) => norm(v.quantity) === parsed.qty && norm(v.unit) === parsed.unit
+//       );
+
+//       if (match) {
+//         const k2 = `${prod._id}|${match._id}`;
+//         if (pricing[k2]) return pricing[k2];
+
+//         const base = Number(match.price ?? prod.price ?? prod.mrp ?? 0);
+//         const pct = clampPct(prod.discountPercentage);
+
+//         const final =
+//           pct > 0
+//             ? priceAfterPctWholeRupee(base, pct, "nearest")
+//             : Number(prod.discountPrice ?? base);
+
+//         return {
+//           originalPrice: base,
+//           discountedPrice: final,
+//           discountPercentage: pct,
+//         };
+//       }
+//     }
+
+//     return { originalPrice: 0, discountedPrice: 0, discountPercentage: 0 };
+//   };
+
+//   /* ------------------------------- TOTALS ------------------------------ */
+//   const FREE_SHIPPING_THRESHOLD = 2000;
+//   const BASE_SHIPPING_FEE = 0;
+
+//   const subtotal = useMemo(() => {
+//     return (cartItems || []).reduce((sum, item) => {
+//       const q = Number(item.quantity) || 1;
+//       const info = getPriceInfo(item);
+//       return sum + Number(info.originalPrice || 0) * q;
+//     }, 0);
+//   }, [cartItems, pricing]);
+
+//   const itemsDiscount = useMemo(() => {
+//     return (cartItems || []).reduce((sum, item) => {
+//       const q = Number(item.quantity) || 1;
+//       const info = getPriceInfo(item);
+//       const orig = Number(info.originalPrice || 0);
+//       const pct = Number(info.discountPercentage || 0);
+//       return sum + ((orig * pct) / 100) * q;
+//     }, 0);
+//   }, [cartItems, pricing]);
+
+//   const discountedSubtotal = useMemo(
+//     () => Math.max(0, subtotal - itemsDiscount),
+//     [subtotal, itemsDiscount]
+//   );
+
+//   const shippingFee =
+//     discountedSubtotal >= FREE_SHIPPING_THRESHOLD ? 0 : BASE_SHIPPING_FEE;
+
+//   const gst = discountedSubtotal * 0.18;
+//   const grandTotal = discountedSubtotal + shippingFee + gst;
+
+//   const itemsCount = (cartItems || []).reduce(
+//     (n, it) => n + Number(it.quantity || 0),
+//     0
+//   );
+
+//   const unlockLeft = Math.max(
+//     0,
+//     FREE_SHIPPING_THRESHOLD - discountedSubtotal
+//   );
+
+//   function cartToApiItems(list = []) {
+//     return list.map((ci) => {
+//       const q = Number(ci.quantity) || 1;
+//       const info = getPriceInfo(ci);
+
+//       return {
+//         productId: ci.id,
+//         variantId: ci.variantId || null,
+//         name: ci.name,
+//         image: ci.image,
+//         quantity: q,
+//         selectedWeight: ci.selectedWeight,
+//         price: Number(info.discountedPrice || 0),
+//       };
+//     });
+//   }
+
+//   /* ------------------------------- PAY NOW ----------------------------- */
+//   const handlePayNow = async () => {
+//     if (!cartItems?.length) {
+//       alert("Your cart is empty.");
+//       navigate("/best-seller");
+//       return;
+//     }
+
+//     if (!selectedAddress || !selectedAddress._id) {
+//       alert("Select an address before paying.");
+//       return;
+//     }
+
+//     const current = getAuthUser();
+//     if (!current?.id && !current?._id) {
+//       alert("Please log in to continue.");
+//       return;
+//     }
+
+//     const customerId = current.id || current._id || current.userId;
+
+//     setIsLoading(true);
+
+//     try {
+//       const items = cartToApiItems(cartItems);
+//       const amount = grandTotal;
+
+//       const res = await fetch(`${API_BASE}/api/payments/initiate`, {
+//         method: "POST",
+//         headers: authHeaders(),
+//         body: JSON.stringify({
+//           amount,
+//           items,
+//           addressId: selectedAddress._id,
+//           customerId,
+//         }),
+//       });
+
+//       if (!res.ok) throw new Error(await res.text());
+
+//       const paymentResponse = await res.json();
+//       const redirectUrl = paymentResponse?.phonepeResponse?.redirectUrl;
+//       const orderId =
+//         paymentResponse?.phonepeResponse?.merchantTransactionId ||
+//         paymentResponse?.phonepeResponse?.orderId;
+
+//       if (redirectUrl && orderId) {
+//         localStorage.setItem(
+//           "orderDetails",
+//           JSON.stringify({
+//             items,
+//             grandTotal: amount,
+//             addressId: selectedAddress._id,
+//             orderId,
+//           })
+//         );
+//         window.location.href = redirectUrl;
+//       } else {
+//         alert("Payment initiation failed.");
+//       }
+//     } catch (e) {
+//       alert("Error during payment.");
+//     } finally {
+//       setIsLoading(false);
+//     }
+//   };
+
+//   /* ------------------------------- UI --------------------------------- */
+//   return (
+//     <Container className="checkout">
+//       <Row className="gx-4">
+//         {/* LEFT */}
+//         <Col md={8}>
+//           <div className="infoBar">
+//             <span
+//               className={`pill ${
+//                 unlockLeft > 0 ? "pill-warn" : "pill-success"
+//               }`}
+//             >
+//               <span
+//                 className={`badge ${
+//                   unlockLeft > 0 ? "badge-warn" : "badge-success"
+//                 }`}
+//               >
+//                 {unlockLeft > 0 ? "Almost there" : "Unlocked"}
+//               </span>
+//               {unlockLeft > 0 ? (
+//                 <>Add ₹{unlockLeft} more to unlock free delivery</>
+//               ) : (
+//                 <>FREE delivery unlocked!</>
+//               )}
+//             </span>
+
+//             <span>
+//               Shipping ₹
+//               {subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 50} if not unlocked
+//             </span>
+//           </div>
+
+//           {/* Bag */}
+//           <Card className="bagCard">
+//             <div className="bagHeader">
+//               <h5>Your Bag ({itemsCount})</h5>
+//               <div className="subtotal">
+//                 Subtotal: <b>₹{subtotal.toFixed(2)}</b>
+//               </div>
+//             </div>
+
+//             {pricingLoading && (
+//               <div className="px-3 pb-2 text-muted">Updating prices…</div>
+//             )}
+//             {pricingError && (
+//               <div className="px-3 pb-2 text-danger">{pricingError}</div>
+//             )}
+
+//             <div className="bagList">
+//               {(cartItems || []).map((ci) => {
+//                 const q = Number(ci.quantity) || 1;
+//                 const info = getPriceInfo(ci);
+//                 const line = Number(info.originalPrice || 0) * q;
+
+//                 return (
+//                   <div
+//                     key={`${ci.id}-${ci.variantId || ci.selectedWeight}`}
+//                     className="bagRow"
+//                   >
+//                     <img
+//                       src={ci.image}
+//                       alt={ci.name}
+//                       className="bagImg"
+//                     />
+
+//                     <div className="bagMeta">
+//                       <div className="bagTitle">{ci.name}</div>
+//                       <div className="bagSub">Qty {q}</div>
+//                     </div>
+
+//                     <div className="bagPrice">₹{line.toFixed(2)}</div>
+//                   </div>
+//                 );
+//               })}
+//             </div>
+//           </Card>
+
+//           {/* Address */}
+//           <div className="sectionHeader">
+//             <h4>Delivery Address</h4>
+//             <Button
+//               variant="success"
+//               size="sm"
+//               onClick={() =>
+//                 setShowForm((prev) => {
+//                   const next = !prev;
+//                   // When opening the form, default email = login email
+//                   if (!prev && currentUser?.email) {
+//                     setForm((f) => ({
+//                       ...f,
+//                       email: f.email || currentUser.email,
+//                     }));
+//                   }
+//                   return next;
+//                 })
+//               }
+//             >
+//               {showForm ? "Close" : "+ Add New"}
+//             </Button>
+//           </div>
+
+//           {/* Logged in email */}
+//           {currentUser?.email && (
+//             <div className="text-muted mb-2">
+//               Logged in as <strong>{currentUser.email}</strong>
+//             </div>
+//           )}
+
+//           {/* ✅ Primary/default address card – full address like screenshot */}
+//           {selectedAddress && (
+//             <Card className="addrPrimaryCard mb-3">
+//               <Card.Body>
+//                 <div className="addrCard selected">
+//                   <div className="addrTop">
+//                     <div className="addrDot" />
+//                     <div className="addrName">
+//                       {selectedAddress.firstName} {selectedAddress.lastName}
+//                     </div>
+//                     <span className="addrTag">Default Address</span>
+//                   </div>
+
+//                   <div className="addrBody">
+//                     <div className="line">{selectedAddress.address}</div>
+//                     <div className="line">
+//                       {selectedAddress.city}, {selectedAddress.state} -{" "}
+//                       {selectedAddress.pincode}
+//                     </div>
+//                     <div className="line">
+//                       Phone: {selectedAddress.mobileNumber}
+//                     </div>
+//                     <div className="line">{selectedAddress.email}</div>
+//                   </div>
+
+//                   <div className="addrActions">
+//                     <Button
+//                       variant="outline-danger"
+//                       size="sm"
+//                       onClick={() =>
+//                         handleDeleteAddress(
+//                           selectedAddress._id || selectedAddress.id
+//                         )
+//                       }
+//                     >
+//                       Delete
+//                     </Button>
+//                   </div>
+//                 </div>
+//               </Card.Body>
+//             </Card>
+//           )}
+
+//           <Card className="addrFormCard">
+//             <Card.Body>
+//               {addrLoading && (
+//                 <div className="text-muted mb-2">
+//                   Loading saved addresses…
+//                 </div>
+//               )}
+//               {addrError && (
+//                 <div className="text-danger mb-2">{addrError}</div>
+//               )}
+
+//               {!addrLoading &&
+//                 !selectedAddress &&
+//                 addresses.length === 0 &&
+//                 !showForm && (
+//                   <div className="text-muted">
+//                     No saved addresses yet. Add one to continue.
+//                   </div>
+//                 )}
+
+//               {/* Other saved addresses (if more than one) */}
+//               {otherAddresses.length > 0 && (
+//                 <div className="addressList">
+//                   {otherAddresses.map((a) => {
+//                     const id = a._id || a.id;
+//                     const isSelected = selectedId === id;
+
+//                     const fullName = `${a.firstName} ${a.lastName}`;
+//                     const addrLine = a.address;
+
+//                     return (
+//                       <div
+//                         key={id}
+//                         className={`addrCard ${isSelected ? "selected" : ""}`}
+//                       >
+//                         <div className="addrTop">
+//                           <label className="radio">
+//                             <input
+//                               type="radio"
+//                               checked={isSelected}
+//                               onChange={() => {
+//                                 setSelectedId(id);
+//                                 localStorage.setItem(
+//                                   "preferredAddressId",
+//                                   id
+//                                 );
+//                               }}
+//                             />
+//                             <span />
+//                           </label>
+//                           <div className="addrName">{fullName}</div>
+//                         </div>
+
+//                         <div className="addrBody">
+//                           <div className="line">{addrLine}</div>
+//                           <div className="line">
+//                             {a.city}, {a.state} - {a.pincode}
+//                           </div>
+//                           <div className="line">
+//                             Phone: {a.mobileNumber}
+//                           </div>
+//                           <div className="line">{a.email}</div>
+//                         </div>
+
+//                         <div className="addrActions">
+//                           <Button
+//                             variant="outline-danger"
+//                             size="sm"
+//                             onClick={() => handleDeleteAddress(id)}
+//                           >
+//                             Delete
+//                           </Button>
+//                         </div>
+//                       </div>
+//                     );
+//                   })}
+//                 </div>
+//               )}
+
+//               {/* Add new */}
+//               {showForm && (
+//                 <Form onSubmit={handleAddNewAddress}>
+//                   <Form.Control
+//                     type="email"
+//                     name="email"
+//                     placeholder="Email"
+//                     className="mb-2"
+//                     value={form.email}
+//                     onChange={handleFormChange}
+//                     required
+//                   />
+
+//                   <Row>
+//                     <Col md={6}>
+//                       <Form.Control
+//                         name="firstName"
+//                         placeholder="First Name"
+//                         className="mb-2"
+//                         value={form.firstName}
+//                         onChange={handleFormChange}
+//                         required
+//                       />
+//                     </Col>
+//                     <Col md={6}>
+//                       <Form.Control
+//                         name="lastName"
+//                         placeholder="Last Name"
+//                         className="mb-2"
+//                         value={form.lastName}
+//                         onChange={handleFormChange}
+//                         required
+//                       />
+//                     </Col>
+//                   </Row>
+
+//                   <Row>
+//                     <Col md={4}>
+//                       <Form.Select
+//                         name="phoneCode"
+//                         value={form.phoneCode}
+//                         onChange={handleFormChange}
+//                         className="mb-2"
+//                       >
+//                         <option value="+91">+91</option>
+//                         <option value="+1">+1</option>
+//                       </Form.Select>
+//                     </Col>
+
+//                     <Col md={8}>
+//                       <Form.Control
+//                         name="phoneNumber"
+//                         placeholder="Phone Number"
+//                         className="mb-2"
+//                         value={form.phoneNumber}
+//                         onChange={handleFormChange}
+//                         required
+//                         maxLength={10}
+//                       />
+//                     </Col>
+//                   </Row>
+
+//                   <Form.Control
+//                     name="address1"
+//                     placeholder="Address Line 1"
+//                     className="mb-2"
+//                     value={form.address1}
+//                     onChange={handleFormChange}
+//                     required
+//                   />
+
+//                   <Form.Control
+//                     name="address2"
+//                     placeholder="Address Line 2 (optional)"
+//                     className="mb-2"
+//                     value={form.address2}
+//                     onChange={handleFormChange}
+//                   />
+
+//                   <Row>
+//                     <Col md={6}>
+//                       <Form.Control
+//                         name="city"
+//                         placeholder="City"
+//                         className="mb-2"
+//                         value={form.city}
+//                         onChange={handleFormChange}
+//                         required
+//                       />
+//                     </Col>
+//                     <Col md={6}>
+//                       <Form.Control
+//                         name="state"
+//                         placeholder="State"
+//                         className="mb-2"
+//                         value={form.state}
+//                         onChange={handleFormChange}
+//                         required
+//                       />
+//                     </Col>
+//                   </Row>
+
+//                   <Row>
+//                     <Col md={6}>
+//                       <Form.Control
+//                         name="pincode"
+//                         placeholder="Pincode"
+//                         className="mb-2"
+//                         value={form.pincode}
+//                         onChange={handleFormChange}
+//                         required
+//                         maxLength={6}
+//                       />
+//                     </Col>
+
+//                     <Col md={6}>
+//                       <Form.Control
+//                         name="country"
+//                         placeholder="Country"
+//                         className="mb-2"
+//                         value={form.country}
+//                         onChange={handleFormChange}
+//                         required
+//                       />
+//                     </Col>
+//                   </Row>
+
+//                   <div className="d-flex justify-content-end gap-2">
+//                     <Button
+//                       variant="outline-secondary"
+//                       onClick={() => setShowForm(false)}
+//                     >
+//                       Cancel
+//                     </Button>
+
+//                     <Button type="submit" className="btnPrimary">
+//                       {savingNew ? "Saving…" : "Save Address"}
+//                     </Button>
+//                   </div>
+//                 </Form>
+//               )}
+//             </Card.Body>
+//           </Card>
+//         </Col>
+
+//         {/* RIGHT */}
+//         <Col md={4}>
+//           <Card className="orderCard sticky">
+//             <div className="orderHeader">Order Details</div>
+
+//             <div className="orderRows">
+//               <div className="rowLine">
+//                 <span>Items Subtotal</span>
+//                 <span>₹ {subtotal.toFixed(2)}</span>
+//               </div>
+
+//               <div className="rowLine">
+//                 <span>Discount</span>
+//                 <span>- ₹ {itemsDiscount.toFixed(2)}</span>
+//               </div>
+
+//               <div className="rowLine">
+//                 <span>Subtotal after discount</span>
+//                 <span>₹ {discountedSubtotal.toFixed(2)}</span>
+//               </div>
+
+//               <div className="rowLine">
+//                 <span>Shipping</span>
+//                 <span>₹ {shippingFee}</span>
+//               </div>
+
+//               <div className="rowLine">
+//                 <span>GST (18%)</span>
+//                 <span>₹ {gst.toFixed(2)}</span>
+//               </div>
+//             </div>
+
+//             <div className="totalRow">
+//               <span>Total</span>
+//               <span>₹ {grandTotal.toFixed(2)}</span>
+//             </div>
+
+//             <Button
+//               className="payBtn"
+//               onClick={handlePayNow}
+//               disabled={isLoading}
+//             >
+//               {isLoading ? "Processing…" : `Pay ₹${grandTotal.toFixed(2)}`}
+//             </Button>
+
+//             <div className="orderNote">
+//               Secure payments • Easy returns • Fast support
+//             </div>
+//           </Card>
+//         </Col>
+//       </Row>
+//     </Container>
+//   );
+// }
+
+
 import { Container, Form, Row, Col, Button, Card } from "react-bootstrap";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
