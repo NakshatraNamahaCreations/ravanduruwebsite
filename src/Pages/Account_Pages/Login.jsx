@@ -4,7 +4,6 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Form, Button, Container } from "react-bootstrap";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-//import axios from "axios";
 
 import Loginpageline from "/media/Loginpageline.png";
 import BannaleafRd from "/media/BannaleafRd.png";
@@ -13,9 +12,29 @@ import plate from "/media/Layer_20.png";
 import BannaleafRU from "/media/BannaleafRU.png";
 import ScrollToTop from "../../Component/ScrollToTop";
 
+/* =======================
+   VALIDATION SCHEMA
+======================= */
 const schema = yup.object({
-  email: yup.string().email("Invalid email").required("Email is required"),
-  password: yup.string().min(6, "Min 6 characters").required("Password is required"),
+  identifier: yup
+    .string()
+    .required("Email or Mobile number is required")
+    .test(
+      "email-or-mobile",
+      "Enter a valid email or 10-digit mobile number",
+      (value) => {
+        if (!value) return false;
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const mobileRegex = /^[6-9]\d{9}$/; // Indian mobile
+
+        return emailRegex.test(value) || mobileRegex.test(value);
+      }
+    ),
+  password: yup
+    .string()
+    .min(6, "Min 6 characters")
+    .required("Password is required"),
 });
 
 const API_BASE = "https://api.ravandurustores.com";
@@ -25,17 +44,21 @@ const Login = () => {
   const [checkingSession, setCheckingSession] = useState(true);
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
+
   const navigate = useNavigate();
   const location = useLocation();
 
+  /* Fade animation */
   useEffect(() => {
     const t = setTimeout(() => setIsVisible(true), 100);
     return () => clearTimeout(t);
   }, []);
 
-  useEffect(() => { window.scrollTo(0, 0); }, []);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
-  // If already logged in, bounce to account (or previous target)
+  /* Already logged-in check */
   useEffect(() => {
     try {
       const existing = JSON.parse(localStorage.getItem("user") || "null");
@@ -47,57 +70,59 @@ const Login = () => {
     setCheckingSession(false);
   }, [navigate]);
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
     resolver: yupResolver(schema),
   });
 
+  /* =======================
+     SUBMIT HANDLER
+  ======================= */
 const onSubmit = async (form) => {
   setApiError("");
   setLoading(true);
 
   try {
-    const resp = await fetch(`${API_BASE}/api/customers/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      // If your API sets cookies for session auth, uncomment this:
-      // credentials: "include",
-      body: JSON.stringify({
-        email: form.email,
-        password: form.password,
-      }),
-    });
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.identifier);
+    const isMobile = /^[6-9]\d{9}$/.test(form.identifier);
 
-    // Try to parse response body safely (even on non-2xx)
-    const text = await resp.text();
-    let json = {};
-    try { json = text ? JSON.parse(text) : {}; } catch (_) {}
+    const payload = {
+      password: form.password,
+      ...(isEmail && { email: form.identifier.toLowerCase() }),
+      ...(isMobile && { mobilenumber: form.identifier }),
+    };
+
+    const resp = await fetch(
+      "https://api.ravandurustores.com/api/customers/login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const json = await resp.json();
 
     if (!resp.ok) {
-      // Prefer API’s message if present
-      throw new Error(json?.message || `HTTP ${resp.status} ${resp.statusText}`);
+      throw new Error(json.message || "Login failed");
     }
 
-    // Expected shape: { user, token } OR { user }
-    const user = json.user || json;
-    const token = json.token;
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        ...json.user,
+        isLoggedIn: true,
+      })
+    );
 
-    const sessionUser = {
-      ...user,
-      token,
-      isLoggedIn: true,
-      lastLoginAt: new Date().toISOString(),
-    };
-    localStorage.setItem("user", JSON.stringify(sessionUser));
+    navigate("/account", { replace: true });
 
-    // Redirect: 1) state.from 2) redirectAfterLogin 3) /account
-    const fallback = localStorage.getItem("redirectAfterLogin") || "/your-cart";
-    localStorage.removeItem("redirectAfterLogin");
-    const target = location?.state?.from || fallback;
-
-    navigate(target, { replace: true });
   } catch (err) {
     console.error("Login error:", err);
-    setApiError(err.message || "Login failed. Please try again.");
+    setApiError(err.message);
   } finally {
     setLoading(false);
   }
@@ -109,82 +134,71 @@ const onSubmit = async (form) => {
     <>
       <div
         className="page-content"
-        style={{ opacity: isVisible ? 1 : 0, transition: "opacity .5s ease-in-out" }}
+        style={{
+          opacity: isVisible ? 1 : 0,
+          transition: "opacity .5s ease-in-out",
+        }}
       >
-        {/* Background decorations */}
-        <div style={{ position: "relative", margin: "10% 0" }} className="login-background">
-          <div style={{ position: "absolute", top: "-25%", pointerEvents: "none", zIndex: 1 }}>
-            <img src={BannaleafRd} alt="Banana Leaf" style={{ width: "30%", objectFit: "cover" }} />
+        <div style={{ position: "relative", margin: "10% 0" }}>
+          {/* Decorations */}
+          <div style={{ position: "absolute", top: "-25%", zIndex: 1 }}>
+            <img src={BannaleafRd} alt="" style={{ width: "30%" }} />
           </div>
-          <div style={{ position: "absolute", top: "70%", pointerEvents: "none", zIndex: 1 }}>
-            <img src={Rectangle} alt="Rectangle" style={{ width: "25%", objectFit: "cover" }} />
+          <div style={{ position: "absolute", top: "70%", zIndex: 1 }}>
+            <img src={Rectangle} alt="" style={{ width: "25%" }} />
           </div>
-          <div style={{ position: "absolute", right: "-50%", pointerEvents: "none", zIndex: 1 }}>
-            <img src={plate} alt="Plate" style={{ width: "25%", objectFit: "cover" }} />
+          <div style={{ position: "absolute", right: "-50%", zIndex: 1 }}>
+            <img src={plate} alt="" style={{ width: "25%" }} />
           </div>
-          <div style={{ position: "absolute", top: "70%", right: "-42%", pointerEvents: "none", zIndex: 1 }}>
-            <img src={BannaleafRU} alt="Banana Leaf" style={{ width: "25%", objectFit: "cover" }} />
+          <div style={{ position: "absolute", top: "70%", right: "-42%", zIndex: 1 }}>
+            <img src={BannaleafRU} alt="" style={{ width: "25%" }} />
           </div>
 
-          {/* Login form */}
-          <Container
-            style={{
-              margin: "5% auto",
-              display: "flex",
-              justifyContent: "center",
-              fontFamily: "poppins, sans-serif",
-              position: "relative",
-              zIndex: 10,
-            }}
-          >
+          {/* FORM */}
+          <Container style={{ margin: "5% auto", zIndex: 10 }}>
             <div
-              className="p-4 form"
+              className="p-4"
               style={{
-                borderRadius: 10,
-                padding: 25,
                 maxWidth: 450,
-                width: "100%",
+                margin: "auto",
                 border: "1px solid #00614A",
-                backgroundColor: "#dafeecff",
+                background: "#dafeecff",
               }}
             >
               <h2
-                className="text-center mb-4 mobile-font"
-                style={{ fontWeight: "bold", fontSize: 30, letterSpacing: "1px", color: "#00614A" }}
+                className="text-center mb-4"
+                style={{ fontWeight: "bold", color: "#00614A" }}
               >
                 LOGIN
               </h2>
 
               {apiError && (
-                <div className="alert alert-danger py-2" role="alert">
-                  {apiError}
-                </div>
+                <div className="alert alert-danger py-2">{apiError}</div>
               )}
 
               <Form onSubmit={handleSubmit(onSubmit)}>
+                {/* EMAIL OR MOBILE */}
                 <Form.Group className="mb-4">
                   <Form.Control
-                    type="email"
-                    placeholder="Email"
-                    {...register("email")}
-                    isInvalid={!!errors.email}
-                    style={{ height: 50, border: "1.5px solid #00614A", fontSize: 18 }}
-                    className="input-account-forms search-input"
-                    autoFocus
+                    type="text"
+                    placeholder="Email or Mobile Number"
+                    {...register("identifier")}
+                    isInvalid={!!errors.identifier}
+                    style={{ height: 50, fontSize: 18 }}
                   />
                   <Form.Control.Feedback type="invalid">
-                    {errors.email?.message}
+                    {errors.identifier?.message}
                   </Form.Control.Feedback>
                 </Form.Group>
 
+                {/* PASSWORD */}
                 <Form.Group className="mb-4">
                   <Form.Control
                     type="password"
                     placeholder="Password"
                     {...register("password")}
                     isInvalid={!!errors.password}
-                    style={{ height: 50, border: "1.5px solid #00614A", fontSize: 18 }}
-                    className="input-account-forms search-input"
+                    style={{ height: 50, fontSize: 18 }}
                   />
                   <Form.Control.Feedback type="invalid">
                     {errors.password?.message}
@@ -192,53 +206,36 @@ const onSubmit = async (form) => {
                 </Form.Group>
 
                 <Button
-                  variant="none"
                   type="submit"
                   disabled={loading}
-                  className="w-50 mt-2 login-buttons"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 280,
+                    width: "100%",
                     height: 50,
-                    fontWeight: "bold",
-                    color: "#00614A",
-                    backgroundColor: "#97d9c6",
-                    fontSize: 20,
+                    background: "#97d9c6",
                     border: "none",
-                    margin: "20px auto",
-                    borderRadius: 0,
+                    fontWeight: "bold",
                   }}
                 >
                   {loading ? "Signing in..." : "Sign In"}
                 </Button>
               </Form>
 
-              <div>
-                <img
-                  src={Loginpageline}
-                  alt="Divider"
-                  style={{ width: "50%", objectFit: "cover", display: "block", margin: "0 auto" }}
-                />
-              </div>
+              <img
+                src={Loginpageline}
+                alt=""
+                style={{ width: "50%", margin: "20px auto", display: "block" }}
+              />
 
               <Link
                 to="/create_account"
-                className="login-buttons"
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 220,
-                  height: 50,
-                  fontWeight: "bold",
+                  display: "block",
+                  textAlign: "center",
+                  background: "#97d7c6",
+                  padding: 12,
                   color: "#00614A",
-                  backgroundColor: "#97d7c6",
-                  fontSize: 20,
+                  fontWeight: "bold",
                   textDecoration: "none",
-                  border: "none",
-                  margin: "20px auto",
                 }}
               >
                 Create Account
