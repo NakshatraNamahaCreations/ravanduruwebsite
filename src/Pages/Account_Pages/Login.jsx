@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Form, Button, Container } from "react-bootstrap";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import Loginpageline from "/media/Loginpageline.png";
 import BannaleafRd from "/media/BannaleafRd.png";
@@ -11,6 +11,18 @@ import Rectangle from "/media/Rectangle.png";
 import plate from "/media/Layer_20.png";
 import BannaleafRU from "/media/BannaleafRU.png";
 import ScrollToTop from "../../Component/ScrollToTop";
+
+/* =======================
+   HELPERS
+======================= */
+const cleanPhone = (value) =>
+  value.toString().replace(/\D/g, "").slice(-10);
+
+const isValidEmail = (value) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+const isValidIndianMobile = (value) =>
+  /^[6-9]\d{9}$/.test(cleanPhone(value));
 
 /* =======================
    VALIDATION SCHEMA
@@ -24,11 +36,7 @@ const schema = yup.object({
       "Enter a valid email or 10-digit mobile number",
       (value) => {
         if (!value) return false;
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const mobileRegex = /^[6-9]\d{9}$/; // Indian mobile
-
-        return emailRegex.test(value) || mobileRegex.test(value);
+        return isValidEmail(value) || isValidIndianMobile(value);
       }
     ),
   password: yup
@@ -37,8 +45,6 @@ const schema = yup.object({
     .required("Password is required"),
 });
 
-const API_BASE = "https://api.ravandurustores.com";
-
 const Login = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -46,7 +52,6 @@ const Login = () => {
   const [apiError, setApiError] = useState("");
 
   const navigate = useNavigate();
-  const location = useLocation();
 
   /* Fade animation */
   useEffect(() => {
@@ -62,7 +67,7 @@ const Login = () => {
   useEffect(() => {
     try {
       const existing = JSON.parse(localStorage.getItem("user") || "null");
-      if (existing && (existing.isLoggedIn || existing.email)) {
+      if (existing?.isLoggedIn) {
         navigate("/account", { replace: true });
         return;
       }
@@ -81,52 +86,51 @@ const Login = () => {
   /* =======================
      SUBMIT HANDLER
   ======================= */
-const onSubmit = async (form) => {
-  setApiError("");
-  setLoading(true);
+  const onSubmit = async (form) => {
+    setApiError("");
+    setLoading(true);
 
-  try {
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.identifier);
-    const isMobile = /^[6-9]\d{9}$/.test(form.identifier);
+    try {
+      const identifier = form.identifier.trim();
+      const payload = { password: form.password };
 
-    const payload = {
-      password: form.password,
-      ...(isEmail && { email: form.identifier.toLowerCase() }),
-      ...(isMobile && { mobilenumber: form.identifier }),
-    };
-
-    const resp = await fetch(
-      "https://api.ravandurustores.com/api/customers/login",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      if (isValidEmail(identifier)) {
+        payload.email = identifier.toLowerCase();
+      } else if (isValidIndianMobile(identifier)) {
+        payload.mobilenumber = cleanPhone(identifier);
       }
-    );
 
-    const json = await resp.json();
+      const resp = await fetch(
+        "https://api.ravandurustores.com/api/customers/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
-    if (!resp.ok) {
-      throw new Error(json.message || "Login failed");
+      const json = await resp.json();
+
+      if (!resp.ok) {
+        throw new Error(json.message || "Login failed");
+      }
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...json.user,
+          isLoggedIn: true,
+        })
+      );
+
+      navigate("/account", { replace: true });
+    } catch (err) {
+      console.error("Login error:", err);
+      setApiError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        ...json.user,
-        isLoggedIn: true,
-      })
-    );
-
-    navigate("/account", { replace: true });
-
-  } catch (err) {
-    console.error("Login error:", err);
-    setApiError(err.message);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   if (checkingSession) return null;
 
@@ -163,6 +167,9 @@ const onSubmit = async (form) => {
                 margin: "auto",
                 border: "1px solid #00614A",
                 background: "#dafeecff",
+                position: "relative",
+                zIndex:9,
+                fontFamily: "poppins"
               }}
             >
               <h2
@@ -177,7 +184,6 @@ const onSubmit = async (form) => {
               )}
 
               <Form onSubmit={handleSubmit(onSubmit)}>
-                {/* EMAIL OR MOBILE */}
                 <Form.Group className="mb-4">
                   <Form.Control
                     type="text"
@@ -191,7 +197,6 @@ const onSubmit = async (form) => {
                   </Form.Control.Feedback>
                 </Form.Group>
 
-                {/* PASSWORD */}
                 <Form.Group className="mb-4">
                   <Form.Control
                     type="password"
@@ -214,6 +219,7 @@ const onSubmit = async (form) => {
                     background: "#97d9c6",
                     border: "none",
                     fontWeight: "bold",
+                    color:"#00614a"
                   }}
                 >
                   {loading ? "Signing in..." : "Sign In"}
