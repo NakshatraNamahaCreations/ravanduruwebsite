@@ -89,7 +89,7 @@ export default function Home() {
           {/* BANNER */}
           <div className="hero-section">
             <video id="video1" className="background-video" autoPlay muted loop playsInline>
-    <source src="/media/Gif-ravanduru.mp4" type="video/mp4" />
+    <source src="/media/GIF-Ravanduru-01.mp4" type="video/mp4" />
   </video>
   {/*<video id="video2" className="background-video" muted loop playsInline style={{display: "none"}}>
     <source src="/media/BannerGIF.mp4" type="video/mp4" />
