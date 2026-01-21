@@ -9,7 +9,7 @@ const SocialSidebar = () => {
     <div className="social-sidebar">
       <Button
         variant="none"
-        href="https://wa.me/yourNumber"
+        href="https://wa.me/7899830366"
         target="_blank"
         className="social-button"
       >
@@ -18,7 +18,7 @@ const SocialSidebar = () => {
 
       <Button
         variant="none"
-        href="https://instagram.com/yourHandle"
+        href="https://www.instagram.com/ravanduru_stores?igsh=MTI2djFsamowYmp0Mg=="
         target="_blank"
         className="social-button"
       >
@@ -27,7 +27,7 @@ const SocialSidebar = () => {
 
       <Button
         variant="none"
-        href="https://facebook.com/yourPage"
+        href="#"
         target="_blank"
         className="social-button"
       >
