@@ -98,7 +98,7 @@ export default function ShippingPolicy(){
             <ul>
               <p>Contact Us For any questions, feel free to reach out: </p>
               <li>Email: <span style={{fontSize:'18px', marginLeft:'5px', fontFamily:'oswald, sans-serif', letterSpacing:'1.5px'}}>av.kitchens1532@gmail.com</span></li>
-              <li>Phone: <span style={{fontSize:'18px', marginLeft:'5px', fontFamily:'oswald, sans-serif', letterSpacing:'1.5px'}}>+91 7899830366</span></li>
+              <li>Phone: <span style={{fontSize:'18px', marginLeft:'5px', fontFamily:'oswald, sans-serif', letterSpacing:'1.5px'}}>+91 8105999016</span></li>
             </ul>
             <p> Thank you for shopping with Ravanduru Stores!</p>
           </div>

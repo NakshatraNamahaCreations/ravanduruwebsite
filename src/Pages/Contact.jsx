@@ -265,7 +265,7 @@ export default function Contact() {
                     }}
                   />
                   <h3 style={{ letterSpacing: "1px" }}>CALL US</h3>
-                  <p style={{ letterSpacing: "1px" }}>07899830366</p>
+                  <p style={{ letterSpacing: "1px" }}>8105999016</p>
                 </div>
               </Col>
 

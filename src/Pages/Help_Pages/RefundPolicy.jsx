@@ -180,7 +180,7 @@ export default function RefundPolicy() {
                       letterSpacing: "1.5px",
                     }}
                   >
-                    +91 789930366
+                    +91 8105999016
                   </span>{" "}
                   during business hours.
                 </li>
@@ -289,7 +289,7 @@ export default function RefundPolicy() {
                       letterSpacing: "1.5px",
                     }}
                   >
-                    +91 789930366
+                    +91 8105999016
                   </span>
                 </li>
                 <li>

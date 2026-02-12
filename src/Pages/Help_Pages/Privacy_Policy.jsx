@@ -390,7 +390,7 @@ export default function Privacy_Policy() {
                           letterSpacing: "2px",
                         }}
                       >
-                        +91 7899830366
+                        +91 8105999016
                       </span>
                     </li>
                     <li>

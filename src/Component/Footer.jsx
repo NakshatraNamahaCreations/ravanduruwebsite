@@ -86,9 +86,9 @@ export default function Footer() {
                 </a>
               </li>
               <li style={{fontSize:"16px"}}>
-                <a href="tel:7899830366" className="footer-link">
+                <a href="tel:8105999016" className="footer-link">
                   <FontAwesomeIcon icon={faPhone} className="me-2" />
-                  7899830366
+                  8105999016
                 </a>
               </li>
             </ul>

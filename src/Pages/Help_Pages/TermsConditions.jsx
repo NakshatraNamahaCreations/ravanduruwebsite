@@ -118,7 +118,7 @@ export default function TermsConditions() {
                           letterSpacing: "1.5px",
                         }}
                       >
-                        +91 7899830366
+                        +91 8105999016
                       </span>
                     </li>
                   </ul>
@@ -433,7 +433,7 @@ export default function TermsConditions() {
                       letterSpacing: "1.5px",
                     }}
                   >
-                    +91 7899830366
+                    +91 8105999016
                   </span>
                 </li>
               </ul>

@@ -9,7 +9,7 @@ const SocialSidebar = () => {
     <div className="social-sidebar">
       <Button
         variant="none"
-        href="https://wa.me/7899830366"
+        href="https://wa.me/8105999016"
         target="_blank"
         className="social-button"
       >
