@@ -147,77 +147,25 @@ export default function Home() {
 
           {/* STORY OF RAVANDURU */}
 
-          <Container
-            style={{
-              marginTop: "10%",
-              fontFamily: "oswaldMedium, sans-serif",
-              letterSpacing: "1px",
-            }}
-            className="story-ravanduru-container"
-          >
-            <Row>
-              <Col sm={8} style={{ padding: "20px", color: "#00614A" }}>
-                <img
-                  src={logo}
-                  alt="logo"
-                  style={{
-                    width: "25%",
-                    height: "auto",
-                    objectFit: "cover",
-                    marginBottom: "20px",
-                  }}
-                  className="story-logo"
-                />
-                <h1
-                  style={{
-                    fontWeight: "900",
-                    fontSize: "35px",
-                    fontFamily: "oswald, sans-serif",
-                    
-                  }}
-                  className="story-font-h1"
-                >
-                  Story Of Ravanduru Stores
-                </h1>
+         <Container
+  className="story-ravanduru-container"
+>
+  <Row className="align-items-center">
+    <Col xs={12} md={8} className="story-left">
+      <img
+        src={logo}
+        alt="logo"
+        className="story-logo"
+      />
 
-                <div style={{ position: "relative", overflow: "hidden" }}>
-                  {/* Background image with opacity */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      backgroundImage:
-                        "url('/media/StoneSmasher_Watermark.png')",
-                      backgroundSize: "35%",
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "center",
-                      zIndex: 0,
-                    }}
-                  />
+      <h1 className="story-font-h1">
+        Story Of Ravanduru Stores
+      </h1>
 
-                  {/* Text content */}
-                  <div
-                    style={{
-                      position: "relative",
-                      zIndex: 1,
-                      padding: "20px 5px",
-                      fontFamily: "poppins, sans-serif",
-                      color: "#00614A",
-                    }}
-                  >
-                    <p
-                      style={{
-                        lineHeight: "1.8",
-                        fontSize: "18px",
-                        maxWidth: "900px",
-                        margin: "0 auto",
-                      }}
-                      className="story-para"
-                    >
-                      In the heart of the serene village of{" "}
+      <div className="story-content-wrapper">
+        <div className="story-text">
+          <p className="story-para">
+           In the heart of the serene village of{" "}
                       <strong>RAVANDURU</strong>, nestled amidst rolling hills
                       and lush greenery, emerged a culinary gem –{" "}
                       <strong>"RAVANDURU STORES"</strong>. This savories brand,
@@ -230,18 +178,18 @@ export default function Home() {
                       the quaint village to every palate, inviting the world to
                       savor its rich, flavorful narratives from our home to{" "}
                       <strong>BHARATH & BEYOND...</strong>
-                    </p>
-                  </div>
-                </div>
-              </Col>
-              <Col sm={4}>
-                <img
-                  className="story-image"
-                  src={Ravanduru}
-                  alt="Products"
-                  style={{ width: "100%", height: "800px", objectFit: "cover", marginTop:"-70px"}}
-                />
-               {/*} <Button
+          </p>
+        </div>
+      </div>
+    </Col>
+
+    <Col xs={12} md={4} className="story-right">
+      <img
+        className="story-image"
+        src={Ravanduru}
+        alt="Products"
+      />
+         {/* <Button
                   variant="none"
                   style={{
                     fontWeight: "bold",
@@ -262,9 +210,12 @@ export default function Home() {
                 >
                   EXPLORE PRODUCTS
                 </Button>*/}
-              </Col>
-            </Row>
-          </Container>
+    </Col>
+  </Row>
+</Container>
+
+
+
           <div style={{ marginTop: "-5%" }}>
             <img
               src={village}
@@ -275,7 +226,7 @@ export default function Home() {
 
           {/* SHOP OUR PRODUCTS */}
 
-          <div
+          {/* <div
             style={{
               textAlign: "center",
               backgroundColor: "#FBF9F4",
@@ -294,7 +245,19 @@ export default function Home() {
                 <Products_Sliders />
               </div>
             </div>
-          </div>
+          </div> */}
+
+          <div className="shop-products-section">
+  <div className="shop-products-inner">
+    <h1 className="shop-products-title">
+      Shop Our Products
+    </h1>
+
+    <div className="shop-products-slider">
+      <Products_Sliders />
+    </div>
+  </div>
+</div>
 
           {/* 100% NATURAL */}
 
